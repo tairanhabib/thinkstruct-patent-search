@@ -1,0 +1,136 @@
+PostgreSQL 16.2 on aarch64-apple-darwin23.5.0, pgvector 0.6.2
+loaded 840 patents, 840 classification codes, 44599 passage vectors: COPY 10.7 s, indexes and ANALYZE 9.2 s
+passage_vectors table 92 MB, HNSW index 82 MB
+query 'wheel hub with integrated pressure sensor', classification prefix B60B, keyword 'sensor', 200 candidate passages
+EXACT (index scans off, every surviving vector is scored): 10 rows, median 1.22 ms of 15 runs (fastest 1.15, slowest 1.84, measured from Python), HNSW index used: no
+    Limit  (cost=2004.43..2004.46 rows=10 width=120) (actual time=0.848..0.850 rows=10 loops=1)
+      Buffers: shared hit=862
+      ->  Sort  (cost=2004.43..2004.93 rows=200 width=120) (actual time=0.848..0.849 rows=10 loops=1)
+            Sort Key: b.distance, p.id
+            Sort Method: quicksort  Memory: 28kB
+            Buffers: shared hit=862
+            ->  Hash Join  (cost=1796.49..2000.11 rows=200 width=120) (actual time=0.755..0.846 rows=11 loops=1)
+                  Hash Cond: (p.id = b.patent_id)
+                  Buffers: shared hit=862
+                  ->  Seq Scan on patents p  (cost=0.00..200.40 rows=840 width=58) (actual time=0.001..0.055 rows=840 loops=1)
+                        Buffers: shared hit=192
+                  ->  Hash  (cost=1793.99..1793.99 rows=200 width=388) (actual time=0.735..0.736 rows=11 loops=1)
+                        Buffers: shared hit=670
+                        ->  Subquery Scan on b  (cost=1790.99..1793.99 rows=200 width=388) (actual time=0.718..0.734 rows=11 loops=1)
+                              Buffers: shared hit=670
+                              ->  Unique  (cost=1790.99..1791.99 rows=200 width=388) (actual time=0.717..0.732 rows=11 loops=1)
+                                    Buffers: shared hit=670
+                                    ->  Sort  (cost=1790.99..1791.49 rows=200 width=388) (actual time=0.717..0.724 rows=200 loops=1)
+                                          Sort Key: v.patent_id, ((v.embedding <#> '[query vector]'::vector))
+                                          Sort Method: quicksort  Memory: 99kB
+                                          Buffers: shared hit=670
+                                          ->  Limit  (cost=1782.85..1783.35 rows=200 width=388) (actual time=0.609..0.626 rows=200 loops=1)
+                                                Buffers: shared hit=670
+                                                ->  Sort  (cost=1782.85..1785.17 rows=927 width=388) (actual time=0.609..0.616 rows=200 loops=1)
+                                                      Sort Key: ((v.embedding <#> '[query vector]'::vector))
+                                                      Sort Method: top-N heapsort  Memory: 199kB
+                                                      Buffers: shared hit=670
+                                                      ->  Nested Loop  (cost=34.46..1742.79 rows=927 width=388) (actual time=0.108..0.481 rows=469 loops=1)
+                                                            Join Filter: (v.patent_id = p_1.id)
+                                                            Buffers: shared hit=670
+                                                            ->  Hash Semi Join  (cost=33.34..129.27 rows=17 width=8) (actual time=0.098..0.109 rows=12 loops=1)
+                                                                  Hash Cond: (p_1.id = c.patent_id)
+                                                                  Buffers: shared hit=37
+                                                                  ->  Bitmap Heap Scan on patents p_1  (cost=13.01..108.66 rows=38 width=4) (actual time=0.009..0.017 rows=38 loops=1)
+                                                                        Recheck Cond: (tsv @@ '''sensor'''::tsquery)
+                                                                        Heap Blocks: exact=29
+                                                                        Buffers: shared hit=32
+                                                                        ->  Bitmap Index Scan on patents_tsv_idx  (cost=0.00..13.00 rows=38 width=0) (actual time=0.007..0.007 rows=38 loops=1)
+                                                                              Index Cond: (tsv @@ '''sensor'''::tsquery)
+                                                                              Buffers: shared hit=3
+                                                                  ->  Hash  (cost=15.50..15.50 rows=386 width=4) (actual time=0.083..0.084 rows=386 loops=1)
+                                                                        Buffers: shared hit=5
+                                                                        ->  Seq Scan on classifications c  (cost=0.00..15.50 rows=386 width=4) (actual time=0.003..0.062 rows=386 loops=1)
+                                                                              Filter: (code ~~ 'B60B%'::text)
+                                                                              Rows Removed by Filter: 454
+                                                                              Buffers: shared hit=5
+                                                            ->  Bitmap Heap Scan on passage_vectors v  (cost=1.13..94.11 rows=53 width=1488) (actual time=0.003..0.006 rows=39 loops=12)
+                                                                  Recheck Cond: (patent_id = c.patent_id)
+                                                                  Heap Blocks: exact=108
+                                                                  Buffers: shared hit=132
+                                                                  ->  Bitmap Index Scan on passage_vectors_patent_id_idx  (cost=0.00..1.11 rows=53 width=0) (actual time=0.002..0.002 rows=39 loops=12)
+                                                                        Index Cond: (patent_id = c.patent_id)
+                                                                        Buffers: shared hit=24
+    Planning:
+      Buffers: shared hit=26
+    Planning Time: 0.264 ms
+    Execution Time: 0.871 ms
+  1. 0.8874  20240278598      claim 24: WHEEL HUB
+       The wheel hub of claim 17 wherein the sensor node is mounted to the housing outboard of the wheel mo
+  2. 0.8726  20240351371      claim 11: WHEEL UNIT FOR A PEDELEC AND PEDELEC
+       a hub which is rotatable about a rotational axis; a rim which is rotatable about the rotational axis
+  3. 0.8706  20250100325      claim 7: VEHICLE WHEEL SUPPORT APPARATUS
+       wherein the sensor is fixed to a fixing portion of the hub carrier in a state in which a detection p
+  4. 0.8702  20250100326      claim 14: VEHICLE WHEEL SUPPORT DEVICE
+       wherein the hub bearing includes a rotary body connected to the wheel, wherein the hub carrier inclu
+  5. 0.8697  20240343065      claim 6: SENSOR HOLDER AND BEARING DEVICE FOR VEHICLE WHEEL
+       an outer member having a double row of outer raceway surfaces on an inner circumference; an inner me
+  6. 0.8671  20250100324      abstract 0: VEHICLE WHEEL SUPPORTING DEVICE
+       A vehicle wheel supporting device includes a hub bearing rotatably supporting a wheel, a hub carrier
+  7. 0.8635  20240157727      claim 4: RIM ACCESSORY FOR WHEEL POSITIONING ANGLE DETECTION, WARNING
+       The rim accessory for the wheel positioning angle detection of claim 1 , wherein the housing body ha
+  8. 0.8558  20240383279      claim 1: TOOL DEVICE AND STEERABLE-WHEEL ASSEMBLY
+       a frame comprising a support arm; a walking element coupled to the frame; a drive motor selectively
+  9. 0.8410  20240198727      description 9: CONTROLLER AND METHOD FOR CONTROLLING CASTERS ATTACHED TO A 
+       In detail, locking device6in the exemplary embodiment shown has an interaction surface7which interac
+ 10. 0.8328  20240208266      abstract 0: Magnetic Apparatus for Centering Caster Wheels
+       An autonomous delivery vehicle having one or more caster wheels that may be held off the ground for
+PLANNER'S OWN CHOICE (nothing forced): 10 rows, median 1.17 ms of 15 runs (fastest 1.13, slowest 1.84, measured from Python), HNSW index used: no
+HNSW, hnsw.ef_search = 40 (the default): 6 rows, median 1.03 ms of 15 runs (fastest 1.00, slowest 1.17, measured from Python), HNSW index used: yes
+    Limit  (cost=20000010913.51..20000010913.53 rows=10 width=120) (actual time=0.640..0.642 rows=6 loops=1)
+      Buffers: shared hit=1121
+      ->  Sort  (cost=20000010913.51..20000010914.01 rows=200 width=120) (actual time=0.640..0.641 rows=6 loops=1)
+            Sort Key: ((v.embedding <#> '[query vector]'::vector)), p.id
+            Sort Method: quicksort  Memory: 26kB
+            Buffers: shared hit=1121
+            ->  Merge Join  (cost=10000010663.89..10000010909.19 rows=200 width=120) (actual time=0.589..0.639 rows=6 loops=1)
+                  Merge Cond: (v.patent_id = p.id)
+                  Buffers: shared hit=1121
+                  ->  Unique  (cost=10000010663.62..10000010664.62 rows=200 width=388) (actual time=0.553..0.555 rows=6 loops=1)
+                        Buffers: shared hit=1007
+                        ->  Sort  (cost=10000010663.62..10000010664.12 rows=200 width=388) (actual time=0.552..0.553 rows=21 loops=1)
+                              Sort Key: v.patent_id, ((v.embedding <#> '[query vector]'::vector))
+                              Sort Method: quicksort  Memory: 32kB
+                              Buffers: shared hit=1007
+                              ->  Limit  (cost=77.16..10655.97 rows=200 width=388) (actual time=0.219..0.545 rows=21 loops=1)
+                                    Buffers: shared hit=1007
+                                    ->  Nested Loop Semi Join  (cost=77.16..49109.96 rows=927 width=388) (actual time=0.219..0.544 rows=21 loops=1)
+                                          Join Filter: (p_1.id = c.patent_id)
+                                          Buffers: shared hit=1007
+                                          ->  Nested Loop  (cost=76.88..38763.41 rows=2018 width=1492) (actual time=0.203..0.234 rows=21 loops=1)
+                                                Buffers: shared hit=935
+                                                ->  Index Scan using passage_vectors_hnsw on passage_vectors v  (cost=76.60..37386.59 rows=44599 width=1488) (actual time=0.200..0.208 rows=40 loops=1)
+                                                      Order By: (embedding <#> '[query vector]'::vector)
+                                                      Buffers: shared hit=896
+                                                ->  Memoize  (cost=0.29..0.32 rows=1 width=4) (actual time=0.000..0.000 rows=1 loops=40)
+                                                      Cache Key: v.patent_id
+                                                      Cache Mode: logical
+                                                      Hits: 27  Misses: 13  Evictions: 0  Overflows: 0  Memory Usage: 2kB
+                                                      Buffers: shared hit=39
+                                                      ->  Index Scan using patents_pkey on patents p_1  (cost=0.28..0.31 rows=1 width=4) (actual time=0.001..0.001 rows=0 loops=13)
+                                                            Index Cond: (id = v.patent_id)
+                                                            Filter: (tsv @@ '''sensor'''::tsquery)
+                                                            Rows Removed by Filter: 1
+                                                            Buffers: shared hit=39
+                                          ->  Index Only Scan using classifications_code_patent_id_idx on classifications c  (cost=0.28..5.11 rows=1 width=4) (actual time=0.014..0.014 rows=1 loops=21)
+                                                Index Cond: ((code ~>=~ 'B60B'::text) AND (code ~<~ 'B60C'::text) AND (patent_id = v.patent_id))
+                                                Filter: (code ~~ 'B60B%'::text)
+                                                Heap Fetches: 21
+                                                Buffers: shared hit=63
+                  ->  Index Scan using patents_pkey on patents p  (cost=0.28..236.97 rows=840 width=58) (actual time=0.002..0.053 rows=583 loops=1)
+                        Buffers: shared hit=114
+    Planning:
+      Buffers: shared hit=26
+    Planning Time: 0.234 ms
+    Execution Time: 0.659 ms
+HNSW, hnsw.ef_search = 1000 (the maximum): 8 rows, median 9.99 ms of 15 runs (fastest 8.70, slowest 12.49, measured from Python), HNSW index used: yes
+HNSW iterative scan: NOT RUN, this pgvector does not have it (invalid configuration parameter name "hnsw.iterative_scan")
+Python search returned 10 patents. Same patents in the same order as exact SQL: True. Largest similarity difference: 1.2e-07
+rank of each exact result's best passage among all 44599 vectors: [1, 20, 21, 23, 24, 37, 74, 219, 1130, 2214]
+HNSW ef_search 40: 6 rows, 6 of the 10 exact patents found
+HNSW ef_search 1000: 8 rows, 8 of the 10 exact patents found

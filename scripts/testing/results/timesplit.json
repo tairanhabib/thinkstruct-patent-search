@@ -1,0 +1,202 @@
+{
+ "files_before_2025": 46,
+ "files_2025": 18,
+ "step1_build_before_2025": {
+  "exit": 0,
+  "seconds": 98.1,
+  "report": "embedded 22577 windows from 22092 passages in 91.3 s (247 windows per second), 5 windows longer than 512 tokens\n{\n  \"embed_seconds\": 91.3,\n  \"embedded_passages\": 22092,\n  \"embedded_windows\": 22577,\n  \"files\": 46,\n  \"language_en\": 460,\n  \"missing_detailed_description\": 89,\n  \"patents\": 460,\n  \"truncated_windows\": 5\n}\n",
+  "counts": {
+   "patents": 460,
+   "distinct_document_numbers": 460,
+   "passages": 22233,
+   "full_text_rows": 460,
+   "classification_rows": 460,
+   "vectors": 22577,
+   "vectors_file_rows": 22577,
+   "passages_with_a_vector": 22092
+  }
+ },
+ "probe_2025_patent": {
+  "doc": "20250001799",
+  "title": "ROLLER AND WHEEL",
+  "present_before_its_week_is_ingested": false,
+  "found_by_title_right_after_ingest": true,
+  "usable_as_a_query_right_after_ingest": true
+ },
+ "step2_ingest_2025": {
+  "exit": 0,
+  "seconds": 44.6,
+  "report": "embedded 10195 windows from 9974 passages in 41.6 s (245 windows per second), 1 windows longer than 512 tokens\n{\n  \"embed_seconds\": 41.6,\n  \"embedded_passages\": 9974,\n  \"embedded_windows\": 10195,\n  \"files\": 18,\n  \"language_en\": 180,\n  \"missing_detailed_description\": 30,\n  \"patents\": 180,\n  \"truncated_windows\": 1\n}\n",
+  "counts": {
+   "patents": 640,
+   "distinct_document_numbers": 640,
+   "passages": 32272,
+   "full_text_rows": 640,
+   "classification_rows": 640,
+   "vectors": 32772,
+   "vectors_file_rows": 32772,
+   "passages_with_a_vector": 32066
+  },
+  "windows_embedded_this_time": 10195,
+  "old_vectors_untouched": true,
+  "full_rebuild_needed": false
+ },
+ "step3_ingest_whole_folder_again": {
+  "exit": 0,
+  "seconds": 0.3,
+  "report": "{\n  \"already_indexed\": 640,\n  \"files\": 64\n}\n",
+  "counts": {
+   "patents": 640,
+   "distinct_document_numbers": 640,
+   "passages": 32272,
+   "full_text_rows": 640,
+   "classification_rows": 640,
+   "vectors": 32772,
+   "vectors_file_rows": 32772,
+   "passages_with_a_vector": 32066
+  }
+ },
+ "duplicates": {
+  "patents": 640,
+  "distinct_document_numbers": 640,
+  "vectors": 32772,
+  "passages_with_a_vector": 32066
+ },
+ "step4_against_single_pass_index": {
+  "same_passages": true,
+  "searches_compared": 150,
+  "top10_lists_that_differ": 0,
+  "largest_similarity_difference": 1.7881393432617188e-07
+ },
+ "step5_test_a": {
+  "2025 | keyword": {
+   "n": 178,
+   "recall@1": 0.8989,
+   "recall@1_ci": [
+    0.8539,
+    0.9382
+   ],
+   "recall@10": 0.9663,
+   "recall@10_ci": [
+    0.9382,
+    0.9888
+   ],
+   "mrr": 0.9293,
+   "mrr_ci": [
+    0.8935,
+    0.9591
+   ]
+  },
+  "2025 | semantic": {
+   "n": 178,
+   "recall@1": 0.8427,
+   "recall@1_ci": [
+    0.792,
+    0.8933
+   ],
+   "recall@10": 0.9663,
+   "recall@10_ci": [
+    0.9382,
+    0.9888
+   ],
+   "mrr": 0.8915,
+   "mrr_ci": [
+    0.8534,
+    0.9285
+   ]
+  },
+  "2025 | hybrid": {
+   "n": 178,
+   "recall@1": 0.8427,
+   "recall@1_ci": [
+    0.7864,
+    0.8934
+   ],
+   "recall@10": 0.9775,
+   "recall@10_ci": [
+    0.9551,
+    0.9944
+   ],
+   "mrr": 0.895,
+   "mrr_ci": [
+    0.8532,
+    0.933
+   ]
+  },
+  "before 2025 | keyword": {
+   "n": 456,
+   "recall@1": 0.9189,
+   "recall@1_ci": [
+    0.8947,
+    0.943
+   ],
+   "recall@10": 0.9737,
+   "recall@10_ci": [
+    0.9561,
+    0.9868
+   ],
+   "mrr": 0.9424,
+   "mrr_ci": [
+    0.9229,
+    0.9597
+   ]
+  },
+  "before 2025 | semantic": {
+   "n": 456,
+   "recall@1": 0.8224,
+   "recall@1_ci": [
+    0.7851,
+    0.8575
+   ],
+   "recall@10": 0.9693,
+   "recall@10_ci": [
+    0.9518,
+    0.9846
+   ],
+   "mrr": 0.8808,
+   "mrr_ci": [
+    0.854,
+    0.9049
+   ]
+  },
+  "before 2025 | hybrid": {
+   "n": 456,
+   "recall@1": 0.8596,
+   "recall@1_ci": [
+    0.8246,
+    0.8904
+   ],
+   "recall@10": 0.9803,
+   "recall@10_ci": [
+    0.9671,
+    0.9912
+   ],
+   "mrr": 0.9103,
+   "mrr_ci": [
+    0.888,
+    0.93
+   ]
+  },
+  "MRR, 2025 minus before | keyword": {
+   "difference": -0.0131,
+   "ci": [
+    -0.0529,
+    0.0242
+   ]
+  },
+  "MRR, 2025 minus before | semantic": {
+   "difference": 0.0107,
+   "ci": [
+    -0.0365,
+    0.0557
+   ]
+  },
+  "MRR, 2025 minus before | hybrid": {
+   "difference": -0.0153,
+   "ci": [
+    -0.0577,
+    0.0283
+   ]
+  }
+ }
+}

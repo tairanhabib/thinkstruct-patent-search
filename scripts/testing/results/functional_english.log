@@ -1,0 +1,246 @@
+........................F.....................................F......... [ 86%]
+........FF.                                                              [100%]
+=================================== FAILURES ===================================
+_ test_keyword_filter_every_result_has_the_keyword_in_title_or_abstract[bearing] _
+
+index = <src.search.Index object at 0x103505550>
+patents = [{'id': 1, 'doc_number': '20240051333', 'collection': 'small', 'title': 'SPOKE', ...}, {'id': 2, 'doc_number': '202400...TOR VEHICLE', ...}, {'id': 6, 'doc_number': '20240051338', 'collection': 'small', 'title': 'PNEUMATIC TIRE', ...}, ...]
+keyword = 'bearing'
+
+    @pytest.mark.parametrize("keyword", ["rubber", "sensor", "noise", "bearing", "hitch"])
+    def test_keyword_filter_every_result_has_the_keyword_in_title_or_abstract(index, patents, keyword):
+        by_doc = {p["doc_number"]: p for p in patents}
+        results = search(keywords=keyword, top_k=EVERYTHING, index=index)
+        assert results
+        for r in results:  # the filter stems words, so "sensors" may stand for "sensor": the word must at least start with it
+>           assert any(w.startswith(keyword[:-1] if keyword.endswith("e") else keyword) for w in words(by_doc[r["doc_number"]])), r["doc_number"]
+E           AssertionError: 20240116312
+E           assert False
+E            +  where False = any(<generator object test_keyword_filter_every_result_has_the_keyword_in_title_or_abstract.<locals>.<genexpr> at 0x14a2d36a0>)
+
+scripts/testing/test_functional_real.py:105: AssertionError
+_ test_bad_input_gives_a_clear_message_and_does_not_crash[claim number that does not exist] _
+
+name = 'claim number that does not exist'
+
+    @pytest.mark.parametrize("name", BAD)
+    def test_bad_input_gives_a_clear_message_and_does_not_crash(name):
+        args, expect = BAD[name]
+        done = cli(*args)
+        output = done.stdout + done.stderr
+        assert "Traceback" not in output, output[-800:]
+        assert done.returncode in (0, 1, 2), done.returncode
+        listed = len(re.findall(r"(?m)^ ?\d+\. \S+ \| ", done.stdout))
+        if expect == "error":
+            assert done.returncode != 0 and re.search(r"error", output, re.I), output[-300:]
+        if expect == "message":
+            assert "No patent" in output, output[-300:]
+        if expect == "results":
+            assert done.returncode == 0 and listed >= 1, output[-300:]
+        if expect == "says so":  # the user asked for a claim that is not there: the output must say that, not just answer
+>           assert re.search(r"no claim 999|claim 999 (does not exist|not found|is not)|has no claim", output, re.I), output[:300]
+E           AssertionError: Searching with the abstract of 20240051333.
+E             
+E              1. 20240399787 | V-SHAPED WHEEL SPOKE
+E                   score 0.0323 | similarity 0.868 | keyword rank 1
+E                   classification B60B102FI | filing week 2024-12-05 | language en | missing: detailed_description
+E                   Evidence, claim 4:
+E                     A V-shaped wheel spoke, wh
+E           assert None
+E            +  where None = <function search at 0x1012f4900>('no claim 999|claim 999 (does not exist|not found|is not)|has no claim', 'Searching with the abstract of 20240051333.\n\n 1. 20240399787 | V-SHAPED WHEEL SPOKE\n      score 0.0323 | similarit...t. 376 ms: translate query 0, encode query 352, filter 0.3, score 15.9, keyword 4.7, fuse and fetch 3.4, translate 0\n', re.IGNORECASE)
+E            +    where <function search at 0x1012f4900> = re.search
+E            +    and   re.IGNORECASE = re.I
+
+scripts/testing/test_functional_real.py:323: AssertionError
+____________________ test_negative_top_is_rejected_or_empty ____________________
+
+index = <src.search.Index object at 0x103505550>
+
+    def test_negative_top_is_rejected_or_empty(index):
+        results = search("wheel", top_k=-1, translate_results=False, index=index)
+>       assert len(results) == 0, f"top_k=-1 returned {len(results)} results"
+E       AssertionError: top_k=-1 returned 639 results
+E       assert 639 == 0
+E        +  where 639 = len([{'doc_number': '20240198724', 'title': 'WHEEL AND MOTOR VEHICLE', 'title_en': 'WHEEL AND MOTOR VEHICLE', 'classificat...les and Method for Producing the Wheel for the Chassis of the Rail Vehicle', 'classification': 'B60B1700FI', ...}, ...])
+
+scripts/testing/test_functional_real.py:333: AssertionError
+_________ test_punctuation_only_keyword_filter_is_not_silently_dropped _________
+
+index = <src.search.Index object at 0x103505550>
+patents = [{'id': 1, 'doc_number': '20240051333', 'collection': 'small', 'title': 'SPOKE', ...}, {'id': 2, 'doc_number': '202400...TOR VEHICLE', ...}, {'id': 6, 'doc_number': '20240051338', 'collection': 'small', 'title': 'PNEUMATIC TIRE', ...}, ...]
+
+    def test_punctuation_only_keyword_filter_is_not_silently_dropped(index, patents):
+        results = search("wheel", keywords="!!! ???", top_k=EVERYTHING, translate_results=False, index=index)
+>       assert len(results) < len(patents), "a keyword filter with no usable word was ignored and the search ran unfiltered"
+E       AssertionError: a keyword filter with no usable word was ignored and the search ran unfiltered
+E       assert 640 < 640
+E        +  where 640 = len([{'doc_number': '20240198724', 'title': 'WHEEL AND MOTOR VEHICLE', 'title_en': 'WHEEL AND MOTOR VEHICLE', 'classificat...les and Method for Producing the Wheel for the Chassis of the Rail Vehicle', 'classification': 'B60B1700FI', ...}, ...])
+E        +  and   640 = len([{'id': 1, 'doc_number': '20240051333', 'collection': 'small', 'title': 'SPOKE', ...}, {'id': 2, 'doc_number': '202400...TOR VEHICLE', ...}, {'id': 6, 'doc_number': '20240051338', 'collection': 'small', 'title': 'PNEUMATIC TIRE', ...}, ...])
+
+scripts/testing/test_functional_real.py:338: AssertionError
+==================================== PASSES ====================================
+_____ test_bad_input_gives_a_clear_message_and_does_not_crash[empty query] _____
+----------------------------- Captured stdout call -----------------------------
+
+[empty query] exit 1, 0 results listed; first line: error: give a query, a document number, or at least one filter
+____ test_bad_input_gives_a_clear_message_and_does_not_crash[no arguments] _____
+----------------------------- Captured stdout call -----------------------------
+
+[no arguments] exit 1, 0 results listed; first line: error: give a query, a document number, or at least one filter
+_ test_bad_input_gives_a_clear_message_and_does_not_crash[unknown document number] _
+----------------------------- Captured stdout call -----------------------------
+
+[unknown document number] exit 1, 0 results listed; first line: error: no patent with document number '99999999999' in the index
+_ test_bad_input_gives_a_clear_message_and_does_not_crash[unknown document number in show] _
+----------------------------- Captured stdout call -----------------------------
+
+[unknown document number in show] exit 0, 0 results listed; first line: No patent with document number '99999999999' in the index.
+_ test_bad_input_gives_a_clear_message_and_does_not_crash[filter that matches nothing] _
+----------------------------- Captured stdout call -----------------------------
+
+[filter that matches nothing] exit 0, 0 results listed; first line: No patent matches.
+_ test_bad_input_gives_a_clear_message_and_does_not_crash[keyword that matches nothing] _
+----------------------------- Captured stdout call -----------------------------
+
+[keyword that matches nothing] exit 0, 0 results listed; first line: No patent matches.
+_ test_bad_input_gives_a_clear_message_and_does_not_crash[query of 10,000 characters] _
+----------------------------- Captured stdout call -----------------------------
+
+[query of 10,000 characters] exit 0, 3 results listed; first line: 1. 20240343062 | WHEEL ASSEMBLY FOR THREE-WHEELED VEHICLE
+_ test_bad_input_gives_a_clear_message_and_does_not_crash[query of only punctuation] _
+----------------------------- Captured stdout call -----------------------------
+
+[query of only punctuation] exit 0, 3 results listed; first line: 1. 20240326518 | Method for monitoring the wear of a motor vehicle tire and tire pressure monitoring module for implementing said method
+_ test_bad_input_gives_a_clear_message_and_does_not_crash[query of only spaces] _
+----------------------------- Captured stdout call -----------------------------
+
+[query of only spaces] exit 0, 3 results listed; first line: 1. 20240217263 | WHEEL
+_ test_bad_input_gives_a_clear_message_and_does_not_crash[query with quotes and SQL] _
+----------------------------- Captured stdout call -----------------------------
+
+[query with quotes and SQL] exit 0, 3 results listed; first line: 1. 20240140138 | Scissor lift wheel lifter reinstalling wheels on automobiles
+_ test_bad_input_gives_a_clear_message_and_does_not_crash[full text operators in the query] _
+----------------------------- Captured stdout call -----------------------------
+
+[full text operators in the query] exit 0, 3 results listed; first line: 1. 20240217263 | WHEEL
+_ test_bad_input_gives_a_clear_message_and_does_not_crash[SQL in the keyword filter] _
+----------------------------- Captured stdout call -----------------------------
+
+[SQL in the keyword filter] exit 0, 0 results listed; first line: No patent matches.
+_ test_bad_input_gives_a_clear_message_and_does_not_crash[wildcards in the title filter] _
+----------------------------- Captured stdout call -----------------------------
+
+[wildcards in the title filter] exit 0, 0 results listed; first line: No patent matches.
+_ test_bad_input_gives_a_clear_message_and_does_not_crash[SQL in the classification filter] _
+----------------------------- Captured stdout call -----------------------------
+
+[SQL in the classification filter] exit 0, 0 results listed; first line: No patent matches.
+______ test_bad_input_gives_a_clear_message_and_does_not_crash[bad date] _______
+----------------------------- Captured stdout call -----------------------------
+
+[bad date] exit 1, 0 results listed; first line: error: dates must look like 2024-06-01
+_ test_bad_input_gives_a_clear_message_and_does_not_crash[date in another format] _
+----------------------------- Captured stdout call -----------------------------
+
+[date in another format] exit 1, 0 results listed; first line: error: dates must look like 2024-06-01
+_ test_bad_input_gives_a_clear_message_and_does_not_crash[unknown passage type] _
+----------------------------- Captured stdout call -----------------------------
+
+[unknown passage type] exit 1, 0 results listed; first line: error: passage type must be one of ('abstract', 'claim', 'description')
+__ test_bad_input_gives_a_clear_message_and_does_not_crash[unknown language] ___
+----------------------------- Captured stdout call -----------------------------
+
+[unknown language] exit 0, 0 results listed; first line: No patent matches.
+_____ test_bad_input_gives_a_clear_message_and_does_not_crash[top of zero] _____
+----------------------------- Captured stdout call -----------------------------
+
+[top of zero] exit 0, 0 results listed; first line: No patent matches.
+____ test_bad_input_gives_a_clear_message_and_does_not_crash[negative top] _____
+----------------------------- Captured stdout call -----------------------------
+
+[negative top] exit 0, 639 results listed; first line: 1. 20240198724 | WHEEL AND MOTOR VEHICLE
+=========================== short test summary info ============================
+PASSED scripts/testing/test_functional_real.py::test_every_readme_input_type_runs_and_prints_results[args0]
+PASSED scripts/testing/test_functional_real.py::test_every_readme_input_type_runs_and_prints_results[args1]
+PASSED scripts/testing/test_functional_real.py::test_every_readme_input_type_runs_and_prints_results[args2]
+PASSED scripts/testing/test_functional_real.py::test_every_readme_input_type_runs_and_prints_results[args3]
+PASSED scripts/testing/test_functional_real.py::test_every_readme_input_type_runs_and_prints_results[args4]
+PASSED scripts/testing/test_functional_real.py::test_every_readme_input_type_runs_and_prints_results[args5]
+PASSED scripts/testing/test_functional_real.py::test_every_readme_input_type_runs_and_prints_results[args6]
+PASSED scripts/testing/test_functional_real.py::test_every_readme_input_type_runs_and_prints_results[args7]
+PASSED scripts/testing/test_functional_real.py::test_search_by_document_number_never_returns_that_patent
+PASSED scripts/testing/test_functional_real.py::test_classification_prefix_returns_exactly_the_matching_patents[None-B60B]
+PASSED scripts/testing/test_functional_real.py::test_classification_prefix_returns_exactly_the_matching_patents[None-B60C]
+PASSED scripts/testing/test_functional_real.py::test_classification_prefix_returns_exactly_the_matching_patents[None-B60D]
+PASSED scripts/testing/test_functional_real.py::test_classification_prefix_returns_exactly_the_matching_patents[None-B60C11]
+PASSED scripts/testing/test_functional_real.py::test_classification_prefix_returns_exactly_the_matching_patents[None-B60B27]
+PASSED scripts/testing/test_functional_real.py::test_classification_prefix_returns_exactly_the_matching_patents[None-B60]
+PASSED scripts/testing/test_functional_real.py::test_classification_prefix_returns_exactly_the_matching_patents[wheel hub with integrated pressure sensor-B60B]
+PASSED scripts/testing/test_functional_real.py::test_classification_prefix_returns_exactly_the_matching_patents[wheel hub with integrated pressure sensor-B60C]
+PASSED scripts/testing/test_functional_real.py::test_classification_prefix_returns_exactly_the_matching_patents[wheel hub with integrated pressure sensor-B60D]
+PASSED scripts/testing/test_functional_real.py::test_classification_prefix_returns_exactly_the_matching_patents[wheel hub with integrated pressure sensor-B60C11]
+PASSED scripts/testing/test_functional_real.py::test_classification_prefix_returns_exactly_the_matching_patents[wheel hub with integrated pressure sensor-B60B27]
+PASSED scripts/testing/test_functional_real.py::test_classification_prefix_returns_exactly_the_matching_patents[wheel hub with integrated pressure sensor-B60]
+PASSED scripts/testing/test_functional_real.py::test_keyword_filter_every_result_has_the_keyword_in_title_or_abstract[rubber]
+PASSED scripts/testing/test_functional_real.py::test_keyword_filter_every_result_has_the_keyword_in_title_or_abstract[sensor]
+PASSED scripts/testing/test_functional_real.py::test_keyword_filter_every_result_has_the_keyword_in_title_or_abstract[noise]
+PASSED scripts/testing/test_functional_real.py::test_keyword_filter_every_result_has_the_keyword_in_title_or_abstract[hitch]
+PASSED scripts/testing/test_functional_real.py::test_keyword_filter_ignores_case
+PASSED scripts/testing/test_functional_real.py::test_multi_word_keyword_filter_needs_every_word
+PASSED scripts/testing/test_functional_real.py::test_multi_word_keyword_is_not_a_phrase_match
+PASSED scripts/testing/test_functional_real.py::test_title_filter_returns_every_patent_that_shares_a_title
+PASSED scripts/testing/test_functional_real.py::test_title_filter_is_contains_not_exact
+PASSED scripts/testing/test_functional_real.py::test_date_range_is_inclusive_at_both_ends
+PASSED scripts/testing/test_functional_real.py::test_combined_filters_return_the_intersection
+PASSED scripts/testing/test_functional_real.py::test_filter_first_and_filter_after_return_the_same_results_in_the_same_order[classification B60 (all)]
+PASSED scripts/testing/test_functional_real.py::test_filter_first_and_filter_after_return_the_same_results_in_the_same_order[classification B60C (tires)]
+PASSED scripts/testing/test_functional_real.py::test_filter_first_and_filter_after_return_the_same_results_in_the_same_order[classification B60B (wheels)]
+PASSED scripts/testing/test_functional_real.py::test_filter_first_and_filter_after_return_the_same_results_in_the_same_order[keyword: rubber]
+PASSED scripts/testing/test_functional_real.py::test_filter_first_and_filter_after_return_the_same_results_in_the_same_order[classification B60C11 (treads)]
+PASSED scripts/testing/test_functional_real.py::test_filter_first_and_filter_after_return_the_same_results_in_the_same_order[filing weeks 2024-06 to 2024-08]
+PASSED scripts/testing/test_functional_real.py::test_filter_first_and_filter_after_return_the_same_results_in_the_same_order[keyword: sensor]
+PASSED scripts/testing/test_functional_real.py::test_filter_first_and_filter_after_return_the_same_results_in_the_same_order[classification B60D (hitches)]
+PASSED scripts/testing/test_functional_real.py::test_filter_first_and_filter_after_return_the_same_results_in_the_same_order[B60C + keywords: noise]
+PASSED scripts/testing/test_functional_real.py::test_filter_first_and_filter_after_return_the_same_results_in_the_same_order[title contains: wheel bearing]
+PASSED scripts/testing/test_functional_real.py::test_filter_first_and_filter_after_return_the_same_results_in_the_same_order[claims only]
+PASSED scripts/testing/test_functional_real.py::test_filter_first_and_filter_after_return_the_same_results_in_the_same_order[B60C descriptions]
+PASSED scripts/testing/test_functional_real.py::test_filter_first_and_filter_after_return_the_same_results_in_the_same_order[english only]
+PASSED scripts/testing/test_functional_real.py::test_results_are_ordered_by_score_and_have_no_duplicates
+PASSED scripts/testing/test_functional_real.py::test_the_same_query_twice_returns_identical_results
+PASSED scripts/testing/test_functional_real.py::test_a_second_index_object_gives_the_same_results
+PASSED scripts/testing/test_functional_real.py::test_top_k_is_respected[1]
+PASSED scripts/testing/test_functional_real.py::test_top_k_is_respected[3]
+PASSED scripts/testing/test_functional_real.py::test_top_k_is_respected[5]
+PASSED scripts/testing/test_functional_real.py::test_top_k_is_respected[10]
+PASSED scripts/testing/test_functional_real.py::test_top_k_is_respected[50]
+PASSED scripts/testing/test_functional_real.py::test_top_k_larger_than_what_exists_returns_what_exists
+PASSED scripts/testing/test_functional_real.py::test_top_k_is_a_prefix_of_a_longer_list
+PASSED scripts/testing/test_functional_real.py::test_hybrid_contains_items_from_both_the_keyword_list_and_the_semantic_list
+PASSED scripts/testing/test_functional_real.py::test_hybrid_score_is_reciprocal_rank_fusion_of_the_two_lists
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[empty query]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[no arguments]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[unknown document number]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[unknown document number in show]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[filter that matches nothing]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[keyword that matches nothing]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[query of 10,000 characters]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[query of only punctuation]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[query of only spaces]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[query with quotes and SQL]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[full text operators in the query]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[SQL in the keyword filter]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[wildcards in the title filter]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[SQL in the classification filter]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[bad date]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[date in another format]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[unknown passage type]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[unknown language]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[top of zero]
+PASSED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[negative top]
+PASSED scripts/testing/test_functional_real.py::test_the_tables_survive_the_injection_attempts
+PASSED scripts/testing/test_functional_real.py::test_search_before_any_ingest_gives_a_message_not_a_crash
+FAILED scripts/testing/test_functional_real.py::test_keyword_filter_every_result_has_the_keyword_in_title_or_abstract[bearing]
+FAILED scripts/testing/test_functional_real.py::test_bad_input_gives_a_clear_message_and_does_not_crash[claim number that does not exist]
+FAILED scripts/testing/test_functional_real.py::test_negative_top_is_rejected_or_empty
+FAILED scripts/testing/test_functional_real.py::test_punctuation_only_keyword_filter_is_not_silently_dropped
+4 failed, 79 passed in 318.45s (0:05:18)

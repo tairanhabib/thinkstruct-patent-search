@@ -1,0 +1,26 @@
+Query searched in: de, en.
+ 1. 20240083199-DE | Flat tire airbag system  [translated from de]
+      score 0.0320 | similarity 0.896 | keyword rank 2
+      classification B60C1702FI | filing week 2024-03-14 | language de
+      Evidence, claim 8 (depends on claim 7), machine translated:
+        The flat tyre airbag system of claim 7 in which the tyre pressure monitoring system contains a
+        pressure sensor positioned operationally within a valve mechanism of the airbag inflation mechanism.
+ 2. 20250128549-DE | Tyre management device, program and tire management method  [translated from de]
+      score 0.0318 | similarity 0.901 | keyword rank 4
+      classification B60C2304FI | filing week 2025-04-24 | language de
+      Evidence, description paragraph 10, machine translated:
+        The tyre pressure monitoring system monitors the internal pressures of the tyres mounted on the
+        vehicle3020. The tyre pressure monitoring system may include, for example, sensors in the tires30, a
+        processor that determines changes in air pressure based on sensor detection values, and a memory that
+        stores sensor detection values and the like. Sensors can include pressure sensors and temperature
+        sensors. According to the current design, the tyre pressure monitoring system provides information on
+        the inner pressure and temperature of the tyres30, which are mounted on the vehicle20to the tyre mana
+        ...
+ 3. 20240083200-DE | Tyre monitoring  [translated from de]
+      score 0.0315 | similarity 0.901 | keyword rank 6
+      classification B60C2304FI | filing week 2024-03-14 | language de
+      Evidence, claim 12 (depends on claim 1), machine translated:
+        A tyre monitor as defined in Claim 1 where the sensor contains a pressure sensor for measuring the
+        inner pressure of a tyre.
+Startup (load index and model): 6.3 s
+100 patents passed the filters, 5876 vectors kept. 4447 ms: translate query 1487, encode query 388, filter 0.5, score 5.7, keyword 1.3, fuse and fetch 0.3, translate 2564

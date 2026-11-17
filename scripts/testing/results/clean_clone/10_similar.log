@@ -1,0 +1,51 @@
+Searching with the claim 1 of 20240051333.
+ 1. 20240399787 | V-SHAPED WHEEL SPOKE
+      score 0.0309 | similarity 0.865 | keyword rank 1
+      classification B60B102FI | filing week 2024-12-05 | language en | missing: detailed_description
+      Evidence, claim 4:
+        A V-shaped wheel spoke, wherein the wheel spoke has a V shape, a bottom part of the V-shaped wheel
+        spoke is provided with a first through hole, the first through hole is configured to place a bolt for
+        connecting the V-shaped wheel spoke with a wheel rim, the V-shaped wheel spoke has two legs, and each
+        of the two legs is provided with a connection part at a top portion of the leg, the connection parts
+        are connectable with flanges at left and right sides of a hub.
+ 2. 20240116312 | Spring Seat Body for a Rigid Axle of a Motor Vehicle and Rigid Axle for a Motor Vehicle With a Spring Seat Body
+      score 0.0288 | similarity 0.865 | keyword rank 11
+      classification B60B3500FI | filing week 2024-04-11 | language en | missing: detailed_description
+      Evidence, claim 1 (number inferred, opening words missing in the source):
+        an upper spring seat surface, a lower seat surface, lateral edge surfaces located between the spring
+        seat surface and the lower seat surface, and holding means for holding tensioning means for fastening
+        at least one spring to the spring seat body, said lateral edge surfaces comprising a first edge
+        surface and a second edge surface facing away from each other and extending transversely to said rigid
+        axle when said spring seat body is mounted on said rigid axle, wherein the first edge surface is
+        closer to an end of the rigid axle carrying a vehicle wheel than the second edge surface when the spr
+        ...
+ 3. 20240123769 | Tires with Segmented Tire Bodies, Embedded Mounting Elements and Partially Embedded Cleats
+      score 0.0276 | similarity 0.863 | keyword rank 10
+      classification B60C1116FI | filing week 2024-04-18 | language en
+      Evidence, claim 1 (number inferred, opening words missing in the source):
+        a resiliently radially-compressible non-pneumatic tire body having an outer circumference spanning
+        circumferentially around a central rotational axis on which said tire body is rotatable, said tire
+        body comprising a plurality of tire segments each made of a same molded material as one another and
+        each spanning a respective partial circumferential distance around said central rotational axis, which
+        denotes an axial direction of the tire; wherein: each segment comprises a first side facing a first
+        circumferential direction around the rotational axis of the tire body and a second side facing an o
+        ...
+ 4. 20240246357 | SPOKE REINFORCING METHOD AND REINFORCED STRUCTURE OF SPOKES
+      score 0.0258 | similarity 0.862 | keyword rank 16
+      classification B60B102FI | filing week 2024-07-25 | language en
+      Evidence, claim 6:
+        A reinforced structure of spokes, including a main body of spoke, a head, a neck and a reinforced part
+        are arranged in turn from the edge of one end of the main body of spoke, the other end is provided
+        with a thread part.
+ 5. 20240278595 | FACE TO RIM REINFORCING CONNECTOR OF A COMPOSITE WHEEL
+      score 0.0242 | similarity 0.863 | keyword rank 35
+      classification B60B310FI | filing week 2024-08-22 | language en
+      Evidence, description paragraph 12:
+        As best shown inFIG.4, each of the spoke saddle310and rim tabs320are formed from a substantially
+        planar sheet of material. However, it should be appreciated that in other embodiments the spoke to rim
+        reinforcing connector can also be formed from multiple plies of materials, each having the described
+        and illustrated configuration. The illustrated spoke saddle310comprises a planar body wrapped around
+        the fibre layup of the sides134and the face surface130of the end section150of a spoke108. The spoke
+        saddle310forms a generally arched shape over the fibre layup of the spoke108. The illustrated spok ...
+Startup (load index and model): 7.1 s
+639 patents passed the filters, 32750 vectors kept. 51 ms: translate query 0, encode query 39, filter 0.2, score 5.7, keyword 5.2, fuse and fetch 0.6, translate 0

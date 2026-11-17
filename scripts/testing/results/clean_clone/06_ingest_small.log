@@ -1,0 +1,11 @@
+embedded 32772 windows from 32066 passages in 131.1 s (250 windows per second), 6 windows longer than 512 tokens
+{
+  "embed_seconds": 131.1,
+  "embedded_passages": 32066,
+  "embedded_windows": 32772,
+  "files": 64,
+  "language_en": 640,
+  "missing_detailed_description": 119,
+  "patents": 640,
+  "truncated_windows": 6
+}

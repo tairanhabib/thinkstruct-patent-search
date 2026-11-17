@@ -1,0 +1,41 @@
+ 1. 20240083200 | TYRE MONITOR
+      score 0.0325 | similarity 0.941 | keyword rank 2
+      classification B60C2304FI | filing week 2024-03-14 | language en
+      Evidence, claim 2 (depends on claim 1):
+        A tyre monitor as claimed in claim 1 , in which the energy harvester unit is also arranged to convert
+        a second type of energy experienced by the harvester unit in use into electrical energy to energise
+        the sensor device.
+ 2. 20250108669 | PCB IMPEDANCE TUNING TO ACHIEVE WIDEBAND AND HIGH ACCEPTANCE OF COIL ANTENNA LENGTH VARIATION
+      score 0.0315 | similarity 0.917 | keyword rank 5
+      classification B60C2304FI | filing week 2025-04-03 | language en
+      Evidence, claim 7 (depends on claim 1):
+        The tire monitoring device of claim 1 , wherein the energy harvesting circuitry comprises a plurality
+        of energy harvesting chips.
+ 3. 20240140146 | Tire Pressure Sensor Information Processing Method and Apparatus, and Device
+      score 0.0301 | similarity 0.870 | keyword rank 7
+      classification B60C2304FI | filing week 2024-05-02 | language en
+      Evidence, description paragraph 3:
+        In the case where the tire pressure monitoring system is initialized, or the tire pressure sensor is
+        replaced, or the tire position is exchanged, etc., binding learning between the tire position and the
+        tire pressure sensor is required. A diagnostic device may be used for communication with the ECU of
+        the tire pressure monitoring system to complete matching learning of the tire pressure sensor.
+        Specifically, the matching learning of the tire pressure sensor can be divided into a high-frequency
+        learning mode and an OBD (On-Board Diagnostics) learning mode.
+ 4. 20240140145 | MODULAR TIRE PRESSURE MONITORING SYSTEM (TPMS) SENSOR WITH EASILY REMOVABLE AND REPLACEABLE BATTERY
+      score 0.0296 | similarity 0.869 | keyword rank 8
+      classification B60C2304FI | filing week 2024-05-02 | language en
+      Evidence, description paragraph 110:
+        In some aspects, the techniques described herein relate to a pressure monitoring system where the
+        pressure sensor (1420) detects an air pressure in a tire attached to the tire rim.
+ 5. 20240367465 | TIRE PRESSURE DETECTOR WITH MUTLTIPLE FREQUENCIES
+      score 0.0278 | similarity 0.875 | keyword rank 22
+      classification B60C2304FI | filing week 2024-11-07 | language en
+      Evidence, description paragraph 3:
+        In aspects of this disclosure, the tire monitor is configurable to transmit the sensor data via a
+        first frequency and/or according to a first protocol to a first computing device. The first computing
+        device may be a tire pressure monitoring system onboard the vehicle. The tire monitor is also
+        configurable to transmit the sensor data via a second frequency and/or according to a second protocol
+        to a second computing device. The second computing device may be a personal device, such as a mobile
+        device.
+Startup (load index and model): 7.2 s
+840 patents passed the filters, 44599 vectors kept. 182 ms: translate query 0, encode query 178, filter 0.2, score 1.8, keyword 0.9, fuse and fetch 0.4, translate 0

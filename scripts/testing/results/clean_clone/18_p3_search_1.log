@@ -1,0 +1,45 @@
+Query searched in: de, en, zh.
+ 1. 20240083200 | TYRE MONITOR
+      score 0.0325 | similarity 0.941 | keyword rank 2
+      classification B60C2304FI | filing week 2024-03-14 | language en
+      Evidence, claim 2 (depends on claim 1):
+        A tyre monitor as claimed in claim 1 , in which the energy harvester unit is also arranged to convert
+        a second type of energy experienced by the harvester unit in use into electrical energy to energise
+        the sensor device.
+ 2. 20240083200-ZH | Tyre monitor  [translated from zh]
+      score 0.0318 | similarity 0.929 | keyword rank 1
+      classification B60C2304FI | filing week 2024-03-14 | language zh
+      Evidence, claim 1 (number inferred, opening words missing in the source), machine translated:
+        A sensor device, which is configured to detect the operational parameters of a tyre installed on a
+        wheel, is configured to operate in closed space formed by wheels and tyres, and an energy collector
+        arranges for the conversion of the first type of energy used by the harvester unit into electrical
+        energy to reinforce the sensor device.
+ 3. 20240083200-DE | Tyre monitoring  [translated from de]
+      score 0.0317 | similarity 0.910 | keyword rank 3
+      classification B60C2304FI | filing week 2024-03-14 | language de
+      Evidence, abstract, machine translated:
+        A tyre monitor shall be exposed, including a sensor device configured to operate within a closed space
+        formed by the wheel and the tyre, and an energy harvester unit. The energy harvester is arranged in
+        such a way that a first type of energy is experienced by the harvest unit used (e.g. mechanical
+        energy, thermal energy) in electrical energy to revive the sensor device. The energy harvester can be,
+        for example, a piezoelectric device or a thermoelectric generator. In use, mechanical loads
+        experienced by the tyre monitor are converted into electrical energy, which can be used to energize
+        the se ...
+ 4. 20250108669 | PCB IMPEDANCE TUNING TO ACHIEVE WIDEBAND AND HIGH ACCEPTANCE OF COIL ANTENNA LENGTH VARIATION
+      score 0.0315 | similarity 0.917 | keyword rank 5
+      classification B60C2304FI | filing week 2025-04-03 | language en
+      Evidence, claim 7 (depends on claim 1):
+        The tire monitoring device of claim 1 , wherein the energy harvesting circuitry comprises a plurality
+        of energy harvesting chips.
+ 5. 20240140146 | Tire Pressure Sensor Information Processing Method and Apparatus, and Device
+      score 0.0296 | similarity 0.870 | keyword rank 7
+      classification B60C2304FI | filing week 2024-05-02 | language en
+      Evidence, description paragraph 3:
+        In the case where the tire pressure monitoring system is initialized, or the tire pressure sensor is
+        replaced, or the tire position is exchanged, etc., binding learning between the tire position and the
+        tire pressure sensor is required. A diagnostic device may be used for communication with the ECU of
+        the tire pressure monitoring system to complete matching learning of the tire pressure sensor.
+        Specifically, the matching learning of the tire pressure sensor can be divided into a high-frequency
+        learning mode and an OBD (On-Board Diagnostics) learning mode.
+Startup (load index and model): 7.6 s
+840 patents passed the filters, 44599 vectors kept. 6207 ms: translate query 2583, encode query 221, filter 0.2, score 7.6, keyword 1.2, fuse and fetch 0.9, translate 3393

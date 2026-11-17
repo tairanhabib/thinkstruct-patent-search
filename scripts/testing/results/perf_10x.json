@@ -1,0 +1,319 @@
+{
+ "machine": "arm64, 10 cores, Python 3.11.15",
+ "patents": 6400,
+ "vectors": 327720,
+ "queries": 50,
+ "repeat": 2,
+ "rows": {
+  "no filter, semantic": {
+   "whole_call": [
+    43.705,
+    46.961
+   ],
+   "without_encoding": [
+    25.179,
+    26.821
+   ],
+   "timings": 100,
+   "median_stage_ms": {
+    "encode_query": 18.423,
+    "filter": 0.004,
+    "translate_query": 0.124,
+    "score": 23.453,
+    "keyword": 0.001,
+    "fuse": 0.895,
+    "fetch": 0.485,
+    "translate": 0.001,
+    "total": 43.705,
+    "filter_and_score": 23.457
+   },
+   "patents_passing": 6400,
+   "vectors_kept": 327720
+  },
+  "no filter, keyword": {
+   "whole_call": [
+    7.06,
+    15.454
+   ],
+   "without_encoding": [
+    6.682,
+    13.668
+   ],
+   "timings": 100,
+   "median_stage_ms": {
+    "encode_query": 1.375,
+    "filter": 0.002,
+    "translate_query": 0.066,
+    "score": 0.0,
+    "keyword": 5.345,
+    "fuse": 0.625,
+    "fetch": 0.631,
+    "translate": 0.0,
+    "total": 7.06,
+    "filter_and_score": 0.002
+   },
+   "patents_passing": 6400,
+   "vectors_kept": null
+  },
+  "no filter, hybrid": {
+   "whole_call": [
+    47.913,
+    58.753
+   ],
+   "without_encoding": [
+    31.268,
+    38.134
+   ],
+   "timings": 100,
+   "median_stage_ms": {
+    "encode_query": 18.327,
+    "filter": 0.003,
+    "translate_query": 0.132,
+    "score": 23.554,
+    "keyword": 5.63,
+    "fuse": 2.048,
+    "fetch": 0.388,
+    "translate": 0.001,
+    "total": 47.913,
+    "filter_and_score": 23.557
+   },
+   "patents_passing": 6400,
+   "vectors_kept": 327720
+  },
+  "broad: classification B60C, filter_first": {
+   "whole_call": [
+    105.485,
+    116.786
+   ],
+   "without_encoding": [
+    87.453,
+    96.248
+   ],
+   "timings": 100,
+   "median_stage_ms": {
+    "encode_query": 18.386,
+    "filter": 2.814,
+    "translate_query": 0.073,
+    "score": 76.953,
+    "keyword": 5.96,
+    "fuse": 0.946,
+    "fetch": 0.806,
+    "translate": 0.001,
+    "total": 105.485,
+    "filter_and_score": 79.748
+   },
+   "patents_passing": 3180,
+   "vectors_kept": 173760,
+   "share_of_vectors_kept": 0.5302
+  },
+  "broad: classification B60C, filter_after": {
+   "whole_call": [
+    50.773,
+    60.778
+   ],
+   "without_encoding": [
+    33.946,
+    39.809
+   ],
+   "timings": 100,
+   "median_stage_ms": {
+    "encode_query": 18.7,
+    "filter": 2.791,
+    "translate_query": 0.07,
+    "score": 23.756,
+    "keyword": 5.848,
+    "fuse": 0.895,
+    "fetch": 0.38,
+    "translate": 0.001,
+    "total": 50.773,
+    "filter_and_score": 26.55
+   },
+   "patents_passing": 3180,
+   "vectors_kept": 173760,
+   "share_of_vectors_kept": 0.5302
+  },
+  "broad: classification B60C, auto": {
+   "whole_call": [
+    50.192,
+    60.506
+   ],
+   "without_encoding": [
+    33.823,
+    40.315
+   ],
+   "timings": 100,
+   "median_stage_ms": {
+    "encode_query": 18.73,
+    "filter": 2.793,
+    "translate_query": 0.07,
+    "score": 23.669,
+    "keyword": 5.73,
+    "fuse": 0.899,
+    "fetch": 0.383,
+    "translate": 0.001,
+    "total": 50.192,
+    "filter_and_score": 26.474
+   },
+   "patents_passing": 3180,
+   "vectors_kept": 173760,
+   "share_of_vectors_kept": 0.5302
+  },
+  "medium: keyword rubber, filter_first": {
+   "whole_call": [
+    41.507,
+    51.187
+   ],
+   "without_encoding": [
+    24.792,
+    31.004
+   ],
+   "timings": 100,
+   "median_stage_ms": {
+    "encode_query": 18.358,
+    "filter": 2.003,
+    "translate_query": 0.048,
+    "score": 15.959,
+    "keyword": 6.024,
+    "fuse": 0.213,
+    "fetch": 0.376,
+    "translate": 0.001,
+    "total": 41.507,
+    "filter_and_score": 17.95
+   },
+   "patents_passing": 770,
+   "vectors_kept": 36300,
+   "share_of_vectors_kept": 0.1108
+  },
+  "medium: keyword rubber, filter_after": {
+   "whole_call": [
+    47.401,
+    57.613
+   ],
+   "without_encoding": [
+    30.828,
+    36.797
+   ],
+   "timings": 100,
+   "median_stage_ms": {
+    "encode_query": 18.657,
+    "filter": 2.134,
+    "translate_query": 0.052,
+    "score": 21.865,
+    "keyword": 6.03,
+    "fuse": 0.215,
+    "fetch": 0.39,
+    "translate": 0.001,
+    "total": 47.401,
+    "filter_and_score": 24.011
+   },
+   "patents_passing": 770,
+   "vectors_kept": 36300,
+   "share_of_vectors_kept": 0.1108
+  },
+  "medium: keyword rubber, auto": {
+   "whole_call": [
+    42.354,
+    55.713
+   ],
+   "without_encoding": [
+    25.322,
+    36.213
+   ],
+   "timings": 100,
+   "median_stage_ms": {
+    "encode_query": 18.293,
+    "filter": 2.106,
+    "translate_query": 0.051,
+    "score": 16.512,
+    "keyword": 6.111,
+    "fuse": 0.216,
+    "fetch": 0.388,
+    "translate": 0.001,
+    "total": 42.354,
+    "filter_and_score": 18.658
+   },
+   "patents_passing": 770,
+   "vectors_kept": 36300,
+   "share_of_vectors_kept": 0.1108
+  },
+  "narrow: title contains wheel bearing, filter_first": {
+   "whole_call": [
+    29.259,
+    39.216
+   ],
+   "without_encoding": [
+    14.046,
+    20.411
+   ],
+   "timings": 100,
+   "median_stage_ms": {
+    "encode_query": 16.104,
+    "filter": 5.954,
+    "translate_query": 0.022,
+    "score": 1.843,
+    "keyword": 5.8,
+    "fuse": 0.019,
+    "fetch": 0.34,
+    "translate": 0.0,
+    "total": 29.259,
+    "filter_and_score": 7.784
+   },
+   "patents_passing": 60,
+   "vectors_kept": 3390,
+   "share_of_vectors_kept": 0.0103
+  },
+  "narrow: title contains wheel bearing, filter_after": {
+   "whole_call": [
+    53.258,
+    63.206
+   ],
+   "without_encoding": [
+    34.95,
+    42.23
+   ],
+   "timings": 100,
+   "median_stage_ms": {
+    "encode_query": 18.852,
+    "filter": 7.324,
+    "translate_query": 0.056,
+    "score": 21.026,
+    "keyword": 6.17,
+    "fuse": 0.028,
+    "fetch": 0.418,
+    "translate": 0.001,
+    "total": 53.258,
+    "filter_and_score": 28.328
+   },
+   "patents_passing": 60,
+   "vectors_kept": 3390,
+   "share_of_vectors_kept": 0.0103
+  },
+  "narrow: title contains wheel bearing, auto": {
+   "whole_call": [
+    30.008,
+    40.459
+   ],
+   "without_encoding": [
+    14.511,
+    20.685
+   ],
+   "timings": 100,
+   "median_stage_ms": {
+    "encode_query": 16.477,
+    "filter": 6.101,
+    "translate_query": 0.024,
+    "score": 1.839,
+    "keyword": 6.037,
+    "fuse": 0.019,
+    "fetch": 0.352,
+    "translate": 0.0,
+    "total": 30.008,
+    "filter_and_score": 7.969
+   },
+   "patents_passing": 60,
+   "vectors_kept": 3390,
+   "share_of_vectors_kept": 0.0103
+  }
+ },
+ "peak_rss_mb": 1863
+}

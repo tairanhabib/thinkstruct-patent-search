@@ -1,0 +1,235 @@
+{
+ "missing_judgments": 0,
+ "by_category_english": {
+  "general": {
+   "queries": 10,
+   "mean_score_at_5": 0.92,
+   "share_with_a_2": 0.6
+  },
+  "vague": {
+   "queries": 5,
+   "mean_score_at_5": 1.28,
+   "share_with_a_2": 0.8
+  },
+  "specific": {
+   "queries": 5,
+   "mean_score_at_5": 1.32,
+   "share_with_a_2": 0.8
+  },
+  "misspelled": {
+   "queries": 5,
+   "mean_score_at_5": 0.44,
+   "share_with_a_2": 0.4
+  },
+  "no_match": {
+   "queries": 5,
+   "mean_score_at_5": 0.0,
+   "share_with_a_2": 0.0
+  },
+  "all 30": {
+   "queries": 30,
+   "mean_score_at_5": 0.813,
+   "share_with_a_2": 0.533
+  },
+  "25 that should match something": {
+   "queries": 25,
+   "mean_score_at_5": 0.976,
+   "share_with_a_2": 0.64
+  }
+ },
+ "by_language_general": {
+  "en": {
+   "queries": 10,
+   "mean_score_at_5": 0.92,
+   "share_with_a_2": 0.6,
+   "detected_as": [
+    "en"
+   ],
+   "detected_correctly": 10
+  },
+  "de": {
+   "queries": 10,
+   "mean_score_at_5": 0.8,
+   "share_with_a_2": 0.3,
+   "detected_as": [
+    "de"
+   ],
+   "detected_correctly": 10
+  },
+  "es": {
+   "queries": 10,
+   "mean_score_at_5": 0.78,
+   "share_with_a_2": 0.5,
+   "detected_as": [
+    "es"
+   ],
+   "detected_correctly": 10
+  },
+  "zh": {
+   "queries": 10,
+   "mean_score_at_5": 0.54,
+   "share_with_a_2": 0.2,
+   "detected_as": [
+    "zh"
+   ],
+   "detected_correctly": 10
+  },
+  "ja": {
+   "queries": 10,
+   "mean_score_at_5": 0.4,
+   "share_with_a_2": 0.1,
+   "detected_as": [
+    "ja"
+   ],
+   "detected_correctly": 10
+  }
+ },
+ "overlap_with_english_top10": {
+  "de": {
+   "mean_shared_inventions_of_10": 5.1,
+   "mean_shared_documents_of_10": 5.1,
+   "same_top_1": 3
+  },
+  "es": {
+   "mean_shared_inventions_of_10": 6.4,
+   "mean_shared_documents_of_10": 6.4,
+   "same_top_1": 6
+  },
+  "zh": {
+   "mean_shared_inventions_of_10": 4.0,
+   "mean_shared_documents_of_10": 4.0,
+   "same_top_1": 3
+  },
+  "ja": {
+   "mean_shared_inventions_of_10": 3.0,
+   "mean_shared_documents_of_10": 3.0,
+   "same_top_1": 1
+  }
+ },
+ "no_match": [
+  {
+   "query": "turbofan aircraft engine with a geared fan and a variable bypass ratio",
+   "top_similarity": 0.838,
+   "results_returned": 10,
+   "top_score": 0.0302,
+   "judged_top5": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "query": "sourdough bread recipe with a long cold fermentation",
+   "top_similarity": 0.794,
+   "results_returned": 10,
+   "top_score": 0.0222,
+   "judged_top5": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "query": "smartphone camera lens with optical image stabilisation",
+   "top_similarity": 0.817,
+   "results_returned": 10,
+   "top_score": 0.0311,
+   "judged_top5": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "query": "method for treating migraine with a monoclonal antibody",
+   "top_similarity": 0.847,
+   "results_returned": 10,
+   "top_score": 0.0323,
+   "judged_top5": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "query": "blockchain consensus protocol for cross-border payments",
+   "top_similarity": 0.81,
+   "results_returned": 10,
+   "top_score": 0.0305,
+   "judged_top5": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  }
+ ],
+ "similarity_top1_by_category": {
+  "general": [
+   0.884,
+   0.863,
+   0.835,
+   0.86,
+   0.855,
+   0.875,
+   0.887,
+   0.888,
+   0.881,
+   0.863
+  ],
+  "vague": [
+   0.873,
+   0.879,
+   0.869,
+   0.839,
+   0.865
+  ],
+  "specific": [
+   0.91,
+   0.882,
+   0.92,
+   0.904,
+   0.855
+  ],
+  "misspelled": [
+   0.867,
+   0.862,
+   0.828,
+   0.857,
+   0.845
+  ],
+  "no_match": [
+   0.838,
+   0.794,
+   0.817,
+   0.847,
+   0.81
+  ]
+ },
+ "result_languages_by_query_language": {
+  "en": {
+   "en": 300
+  },
+  "de": {
+   "en": 100
+  },
+  "es": {
+   "en": 100
+  },
+  "zh": {
+   "en": 100
+  },
+  "ja": {
+   "en": 100
+  }
+ }
+}

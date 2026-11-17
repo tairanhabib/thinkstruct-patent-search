@@ -1,0 +1,47 @@
+ 1. 20240278598 | WHEEL HUB
+      score 0.0325 | similarity 0.887 | keyword rank 2
+      classification B60B2700FI | filing week 2024-08-22 | language en
+      Evidence, claim 24 (depends on claim 17):
+        The wheel hub of claim 17 wherein the sensor node is mounted to the housing outboard of the wheel
+        mounting portion.
+ 2. 20250100326 | VEHICLE WHEEL SUPPORT DEVICE
+      score 0.0309 | similarity 0.870 | keyword rank 1
+      classification B60B2700FI | filing week 2025-03-27 | language en | missing: detailed_description
+      Evidence, claim 14 (number inferred, opening words missing in the source):
+        wherein the hub bearing includes a rotary body connected to the wheel, wherein the hub carrier
+        includes an accommodating hole portion in which part of the hub bearing is accommodated and a fixing
+        portion to which the sensor is fixed, and wherein the sensor is fixed to the fixing portion in a state
+        in which a detection portion of the sensor configured to detect a rotation state of the rotary body
+        about an axis thereof protrudes from an inner circumferential surface of the accommodating hole
+        portion.
+ 3. 20250100325 | VEHICLE WHEEL SUPPORT APPARATUS
+      score 0.0308 | similarity 0.871 | keyword rank 3
+      classification B60B2700FI | filing week 2025-03-27 | language en | missing: detailed_description
+      Evidence, claim 7 (number inferred, opening words missing in the source):
+        wherein the sensor is fixed to a fixing portion of the hub carrier in a state in which a detection
+        portion of the sensor protrudes from the inner circumferential surface of the accommodation hole
+        portion, the detection portion being configured to detect a rotation state of a rotary body of the hub
+        bearing about an axis of the rotary body, the rotary body being connected to the wheel, and wherein
+        the small-diameter protruding portion is disposed between the large-diameter protruding portion and
+        the detection portion in an entering direction of the foreign matter toward the detection portion.
+ 4. 20240351371 | WHEEL UNIT FOR A PEDELEC AND PEDELEC
+      score 0.0301 | similarity 0.873 | keyword rank 7
+      classification B60B2700FI | filing week 2024-10-24 | language en
+      Evidence, claim 11 (number inferred, opening words missing in the source):
+        a hub which is rotatable about a rotational axis; a rim which is rotatable about the rotational axis,
+        the hub and the rim being connected to one another via spokes; a fastening device comprising, a
+        mounting element which is non-rotatably arranged on the hub, and a clamping nut which is fastenable to
+        the hub or to the mounting element via a screw connection; a brake disc which is non-rotatably
+        connected to the hub via the fastening device, wherein, the brake disc is interlockingly connected to
+        the mounting element in a direction of rotation, and the brake disc is clampingly attached via the cla
+        ...
+ 5. 20250100324 | VEHICLE WHEEL SUPPORTING DEVICE
+      score 0.0293 | similarity 0.867 | keyword rank 4
+      classification B60B2700FI | filing week 2025-03-27 | language en | missing: detailed_description
+      Evidence, abstract:
+        A vehicle wheel supporting device includes a hub bearing rotatably supporting a wheel, a hub carrier
+        supporting the hub bearing, a sensor configured to detect a rotating state of the wheel, a cap
+        configured to prevent an entry of foreign material into an inside of the hub bearing, and a deflector
+        configured to isolate the sensor from the foreign material. The deflector is fixed to the cap.
+Startup (load index and model): 8.1 s
+298 patents passed the filters, 14343 vectors kept. 29 ms: translate query 0, encode query 22, filter 0.8, score 3.9, keyword 2.1, fuse and fetch 0.5, translate 0

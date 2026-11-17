@@ -1,0 +1,663 @@
+{
+ "stored_english_title_and_abstract": {
+  "foreign_patents": 200,
+  "no_english_title": 0,
+  "no_english_abstract": 0,
+  "title_not_english": [
+   "20240083199-DE",
+   "20240294042-DE",
+   "20240083199-ZH",
+   "20240190175-ZH",
+   "20240294037-ZH"
+  ],
+  "abstract_not_english": [],
+  "title_same_as_original": 1,
+  "abstract_stuck_repeating": 0,
+  "title_stuck_repeating": 0
+ },
+ "displayed_results": {
+  "results_checked": 150,
+  "passage_not_translated": 0,
+  "passage_not_english": [],
+  "passage_stuck_repeating": [],
+  "label_missing": 0,
+  "original_missing_with_show_original": 3,
+  "title_unknown_or_foreign": 5,
+  "evidence_kinds": {
+   "description": 65,
+   "claim": 77,
+   "abstract": 8
+  }
+ },
+ "show": {
+  "de": {
+   "doc": "20240051333-DE",
+   "says_machine_translated": true,
+   "east_asian_characters_in_plain_output": 0,
+   "original_lines_with_flag": 17,
+   "abstract_line": "  A spoke contains one axle body and two connecting elements. The axle body has one middle segment and two\n  connecting segments. The two connecting segments ar"
+  },
+  "zh": {
+   "doc": "20240051333-ZH",
+   "says_machine_translated": true,
+   "east_asian_characters_in_plain_output": 0,
+   "original_lines_with_flag": 17,
+   "abstract_line": "  The accent consists of one axis and two connecting elements. The axis has an intermediate and two connecting\n  parts. The two links are connected to the two o"
+  }
+ },
+ "language_detection": {
+  "20 en passages (40 characters or more)": {
+   "correct": 20,
+   "of": 20,
+   "wrong": []
+  },
+  "20 de passages (40 characters or more)": {
+   "correct": 20,
+   "of": 20,
+   "wrong": []
+  },
+  "20 zh passages (40 characters or more)": {
+   "correct": 20,
+   "of": 20,
+   "wrong": []
+  },
+  "10 en queries, passage rule (20 letters, 0.7)": {
+   "correct": 10,
+   "of": 10,
+   "got": [
+    "en",
+    "en",
+    "en",
+    "en",
+    "en",
+    "en",
+    "en",
+    "en",
+    "en",
+    "en"
+   ]
+  },
+  "10 en queries, query rule (40 letters, 0.9)": {
+   "correct": 10,
+   "of": 10,
+   "got": [
+    "en",
+    "en",
+    "en",
+    "en",
+    "en",
+    "en",
+    "en",
+    "en",
+    "en",
+    "en"
+   ]
+  },
+  "10 de queries, passage rule (20 letters, 0.7)": {
+   "correct": 10,
+   "of": 10,
+   "got": [
+    "de",
+    "de",
+    "de",
+    "de",
+    "de",
+    "de",
+    "de",
+    "de",
+    "de",
+    "de"
+   ]
+  },
+  "10 de queries, query rule (40 letters, 0.9)": {
+   "correct": 10,
+   "of": 10,
+   "got": [
+    "de",
+    "de",
+    "de",
+    "de",
+    "de",
+    "de",
+    "de",
+    "de",
+    "de",
+    "de"
+   ]
+  },
+  "10 es queries, passage rule (20 letters, 0.7)": {
+   "correct": 10,
+   "of": 10,
+   "got": [
+    "es",
+    "es",
+    "es",
+    "es",
+    "es",
+    "es",
+    "es",
+    "es",
+    "es",
+    "es"
+   ]
+  },
+  "10 es queries, query rule (40 letters, 0.9)": {
+   "correct": 10,
+   "of": 10,
+   "got": [
+    "es",
+    "es",
+    "es",
+    "es",
+    "es",
+    "es",
+    "es",
+    "es",
+    "es",
+    "es"
+   ]
+  },
+  "10 zh queries, passage rule (20 letters, 0.7)": {
+   "correct": 10,
+   "of": 10,
+   "got": [
+    "zh",
+    "zh",
+    "zh",
+    "zh",
+    "zh",
+    "zh",
+    "zh",
+    "zh",
+    "zh",
+    "zh"
+   ]
+  },
+  "10 zh queries, query rule (40 letters, 0.9)": {
+   "correct": 10,
+   "of": 10,
+   "got": [
+    "zh",
+    "zh",
+    "zh",
+    "zh",
+    "zh",
+    "zh",
+    "zh",
+    "zh",
+    "zh",
+    "zh"
+   ]
+  },
+  "10 ja queries, passage rule (20 letters, 0.7)": {
+   "correct": 10,
+   "of": 10,
+   "got": [
+    "ja",
+    "ja",
+    "ja",
+    "ja",
+    "ja",
+    "ja",
+    "ja",
+    "ja",
+    "ja",
+    "ja"
+   ]
+  },
+  "10 ja queries, query rule (40 letters, 0.9)": {
+   "correct": 10,
+   "of": 10,
+   "got": [
+    "ja",
+    "ja",
+    "ja",
+    "ja",
+    "ja",
+    "ja",
+    "ja",
+    "ja",
+    "ja",
+    "ja"
+   ]
+  },
+  "40 short English fragments (under 40 characters)": {
+   "none": 25,
+   "en": 14,
+   "foreign": [
+    [
+     "da",
+     "Deformation Mode: Tensile"
+    ]
+   ]
+  },
+  "15 numeric, formula and empty strings": {
+   "none": 15,
+   "detected": []
+  },
+  "640 English abstracts (what ingest reads first): taken for a foreign language": {
+   "foreign": 0,
+   "unknown": 0,
+   "of": 640,
+   "examples": []
+  },
+  "640 English first claims (ingest fallback): taken for a foreign language": {
+   "foreign": 0,
+   "unknown": 6,
+   "of": 640,
+   "examples": []
+  },
+  "640 English titles (last fallback): taken for a foreign language": {
+   "foreign": 155,
+   "unknown": 220,
+   "of": 640,
+   "examples": [
+    [
+     "de",
+     "WHEEL CARRIER APPARATUS FOR A MOTOR VEHICLE"
+    ],
+    [
+     "hu",
+     "WHEEL ASSEMBLY FOR A VEHICLE"
+    ],
+    [
+     "de",
+     "AUTOMATIC SPEED REDUCING WHEEL"
+    ],
+    [
+     "de",
+     "COMPOSITIONS FOR ELASTOMERIC COMPOUNDS AND TYRES FOR VEHICLES COMPRISI"
+    ],
+    [
+     "pt",
+     "REINFORCED FABRIC COMPRISING A PLURALITY OF METAL REINFORCING ELEMENTS"
+    ],
+    [
+     "de",
+     "WHEEL BEARING UNIT FOR A MOTOR VEHICLE AND MOTOR VEHICLE"
+    ],
+    [
+     "de",
+     "DRIVE SOCKET PROTECTOR FOR LUG NUTS AND WHEELS"
+    ],
+    [
+     "de",
+     "SPINDLE REPAIR APPARATUS AND METHOD"
+    ]
+   ]
+  },
+  "2,000 English passages: taken for a foreign language": {
+   "foreign": 1,
+   "unknown": 0,
+   "of": 2000,
+   "examples": [
+    [
+     "ca",
+     "Y=a1⁢X1+a2⁢X2+a3⁢X3-a4⁢X4-a5⁢X5+a6⁢X6+a7⁢X7-a8⁢X8-a9⁢X9-a10⁢X10+a11⁢X1"
+    ]
+   ]
+  },
+  "30 English forward queries, query rule": {
+   "en": 30,
+   "other": []
+  }
+ },
+ "translation_cache": {
+  "passages": 10,
+  "first_request_ms_median": 1144.7,
+  "first_request_ms_range": [
+   703.1,
+   9114.3
+  ],
+  "second_request_ms_median": 0.076,
+  "second_request_ms_range": [
+   0.047,
+   0.378
+  ],
+  "same_text_both_times": true
+ },
+ "round_trip": [
+  {
+   "original": "The wheel lock device of claim 14 , wherein the tapered end of the generally hollow frustum wall of the conical frustum member comprises an outward edge and an inward edge configured to firmly secure the conical frustum member to the wheel rim.",
+   "de": "Die Radschlosseinrichtung des Anspruchs 14, in der das konische Frustumteil am konischen Frustumteil mit einem nach außen gerichteten Rand und einer nach innen gerichteten Kante fest an der Radfelge befestigt ist, ist am konischen Frustumteil zu verschließen.",
+   "de_back": "The wheel lock device of claim 14, in which the conical frustrating part is firmly attached to the wheel rim to the conical frustrating part with an outward-facing edge and an inward-facing edge, shall be closed to the conical frustrating part.",
+   "de_terms_lost": [],
+   "de_numbers_kept": true,
+   "zh": "14号索赔的轮锁装置,即锥形鲁鲁丘成员一般空心的结壳墙的细细端,包括外边缘和内边缘,其配置是为了牢牢地将锥形鲁丘成员置于轮圈上。",
+   "zh_back": "Claim No. 14 for wheel locking devices, the fine end of the shell wall, which is generally empty, of members of the conical Ruccho, including the outer and inner edges, which are configured to securely place the concierge members in the circle.",
+   "zh_terms_lost": [
+    "rim"
+   ],
+   "zh_numbers_kept": true
+  },
+  {
+   "original": "The two-wheeled vehicle pneumatic tire according to claim 4 , wherein the bead protective strip terminates at a radially outer end at the first height of at most 10 mm to 12 mm.",
+   "de": "Der pneumatische Zweiradreifen nach Anspruch 4 , in dem der Perlenschutzstreifen an einem radialen Außenende in der ersten Höhe von höchstens 10 mm bis 12 mm endet.",
+   "de_back": "The pneumatic two-wheel tyre according to claim 4 , in which the beaded protective strip ends at a radial outer end at the first height of not more than 10 mm but not more than 12 mm.",
+   "de_terms_lost": [
+    "bead"
+   ],
+   "de_numbers_kept": true,
+   "zh": "索赔4所称的两轮车充气轮胎,其中珠子防护带在第一高度最多10毫米至12毫米的半径端的半径外端断裂。",
+   "zh_back": "The two-wheeler pneumatic tyres alleged in claim 4, in which the bead protective belt was broken at the end of the radius up to a height of 10 mm to 12 mm.",
+   "zh_terms_lost": [],
+   "zh_numbers_kept": true
+  },
+  {
+   "original": "The tire of claim 9 , wherein each side block alignment comprises an axially outboard block, the tread pattern comprising a bridge connecting one of the axially outboard blocks of the first pitch pattern to one of the axially outboard blocks of the second pitch pattern.",
+   "de": "Der Reifen des Anspruchs 9 , in dem jede Seitenblockausrichtung einen axialen Außenbordblock umfasst, besteht aus einem Profilmuster, das eine Brücke enthält, die einen der axialen Außenbordblöcke des ersten Pitch-Musters mit einem der axialen Außenbordblöcke des zweiten Pitch-Musters verbindet.",
+   "de_back": "The tyre of claim 9 in which each side block alignment includes an axial outboard block consists of a profile pattern containing a bridge connecting one of the axial outboard blocks of the first pitch pattern to one of the axial outboard blocks of the second pitch pattern.",
+   "de_terms_lost": [
+    "tread"
+   ],
+   "de_numbers_kept": true,
+   "zh": "索赔轮胎9,其中每一侧的区块对齐由一个轴向外的区块组成,胎面图案由一座桥梁组成,连接第一个投方体轴向外的区块之一和第二个投方形轴向外的区块之一。",
+   "zh_back": "The claim is for tyre 9, each of which is aligned to one of the axes, with the ponyms made up of a bridge linking one of the blocks from the first of the projectorial axes and one of the blocks from the second of the rectangular axis.",
+   "zh_terms_lost": [
+    "tread"
+   ],
+   "zh_numbers_kept": true
+  },
+  {
+   "original": "a plurality of flexible spoke assemblies attached between a hub and a rim; wherein each of said plurality of flexible spoke assemblies comprises a braided fiber shaft.",
+   "de": "eine Vielzahl von flexiblen Speichen-Einheiten, die zwischen einer Nabe und einem Rand angebracht sind; wobei jede dieser Pluralitäten von flexiblen Speichen-Einheiten eine geflochtene Faserwelle umfasst.",
+   "de_back": "a variety of flexible spoke units mounted between a hub and an edge, each of which includes a braided fibre shaft of flexible spoke units.",
+   "de_terms_lost": [
+    "rim"
+   ],
+   "de_numbers_kept": true,
+   "zh": "在一个枢纽和边缘之间有多个灵活说话的集会;其中每个所说的多种灵活说话的集会都有一个圆形纤维井。",
+   "zh_back": "There are multiple meetings between one hub and the edges of a flexible speech; each of these meetings, which is described as a multiplicity of flexible speech, has a circular fibre well.",
+   "zh_terms_lost": [
+    "rim",
+    "spoke"
+   ],
+   "zh_numbers_kept": true
+  },
+  {
+   "original": "The spoke as claimed in claim 1 , wherein the at least one engaging recess of each one of the at least one tube includes multiple engaging recesses surrounding a circumference of the rod.",
+   "de": "Die in Anspruch 1 beanspruchte Speiche, wobei die mindestens eine einwirkende Vertiefung jeder der mindestens einer Röhren mehrere einwirkende Vertiefungen um einen Umfang der Stange umfasst.",
+   "de_back": "The spoke claimed in Claim 1, which includes at least one acting deepening of each of the at least one tubes several acting deepenings by a circumference of the rod.",
+   "de_terms_lost": [],
+   "de_numbers_kept": true,
+   "zh": "索赔1中所称的谈话,其中至少一个管至少一个管至少一个管有一个管断线,包括围绕杆环绕的多次断线。",
+   "zh_back": "The interviews alleged in claim 1, at least one of the tubes and at least one of the tubes had a pipe breaker, including multiple breaks around the poles.",
+   "zh_terms_lost": [
+    "spoke"
+   ],
+   "zh_numbers_kept": true
+  },
+  {
+   "original": "The tire according to claim 1 , wherein the communication device is embedded in the sidewall portion of the first half portion, further to the tire width direction outer side than the carcass body portion and further to the tire width direction inner side than the first carcass foldback portion.",
+   "de": "Der Reifen nach Anspruch 1, in dem die Kommunikationseinrichtung in den Seitenwandteil des ersten halben Teils eingebettet ist, weiter zur Reifenbreitenrichtung außen als der Körperteil des Schlachtkörpers und weiter zur Reifenbreitenrichtung innen als der erste Kadaverfaltungsteil.",
+   "de_back": "The tyre according to claim 1 in which the communication device is embedded in the side wall part of the first half part, further to the tyre width direction outside than the body part of the carcase and further to the tyre width direction inside than the first cada folding part.",
+   "de_terms_lost": [
+    "sidewall",
+    "carcass"
+   ],
+   "de_numbers_kept": true,
+   "zh": "281. 根据索赔1, 即通信装置嵌入前半部分侧墙部分的轮胎,在轮胎宽度方向外侧,比尸体部位更远,比第半部的胎面后折部分更远,更靠近轮胎宽度方向内侧。",
+   "zh_back": "281. According to claim 1, the tyres that were embedded in the first half of the wall of the communication device were located on the outside of the tyre ' s width direction, further away from the body, further away from the rear part of the first half of the tyre and closer to the inside of the tyre ' s width direction.",
+   "zh_terms_lost": [
+    "sidewall",
+    "carcass"
+   ],
+   "zh_numbers_kept": false
+  },
+  {
+   "original": "receiving or forming an innerliner comprising the rubber-based material and arranging the innerliner onto the building drum before said expanding the tubular preform to form a carcass of the pneumatic tire or arranging the innerliner onto an inner surface of the carcass.",
+   "de": "die Aufnahme oder Bildung eines Innenliners, der aus dem Material auf Kautschukbasis besteht und den Innenliner auf die Bautrommel anordnet, bevor er die Schlauchvorform zu einem Schlachtkörper des pneumatischen Reifens ausdehnt oder den Innenliner auf eine innere Oberfläche des Schlachtkörpers anordnet.",
+   "de_back": "the intake or formation of an inner liner consisting of the rubber-based material and ordering the inner liner to the construction drum before extending the hose preform to a carcass of the pneumatic tyre or ordering the inner liner to an inner surface of the carcass.",
+   "de_terms_lost": [],
+   "de_numbers_kept": true,
+   "zh": "接收或形成内衬,由橡胶材料组成,并安排内衬放在建筑桶上,然后说将管状前形扩大成充气轮胎的体形,或将内衬安排在尸体内面。",
+   "zh_back": "Receive or form an inner liner consisting of a rubber material and arrange for it to be placed on the building drum, then say that the tube front shape is expanded into the body form of a pneumatic tyre or that the inside liner is placed inside the body.",
+   "zh_terms_lost": [
+    "carcass"
+   ],
+   "zh_numbers_kept": true
+  },
+  {
+   "original": "As shown inFIGS.4to6, the first sipe15in the present embodiment extends in a zigzag shape in a cross section orthogonal to the sipe length direction, and extends in a zigzag shape in a cross section parallel to the ground contacting top surface of the first block13.",
+   "de": "Wie in FIGS.4to6 gezeigt, erstreckt sich die erste Sipe15in der vorliegenden Verkörperung in einer Zickzackform in einem Querschnitt orthogonal bis zur Sipe Länge Richtung, und erstreckt sich in einer Zickzackform in einem Querschnitt parallel zur Bodenkontaktoberfläche des ersten Blocks13.",
+   "de_back": "As shown in FIGS.4to6, the first Sipe15in of the present embodiment extends in a zigzag shape in a cross-section orthogonal to the Sipe length direction, and extends in a zigzag shape in a cross-section parallel to the ground contact surface of the first block13.",
+   "de_terms_lost": [],
+   "de_numbers_kept": true,
+   "zh": "如FIGS.4to6所示,目前化形物中的第一个口口15以zigzag形状在横截面的正正正方形延伸至口腔方向,以zigzag形状延伸至与第一个区块顶部表面接触的地面平行的交叉面13。",
+   "zh_back": "As FIGS.4to6 shows, the first mouth in the present shape extends in the form of a positive square in the cross-section in the form of zegzag to the oral direction, extending in the shape of zigzag to the surface of the ground in parallel with the top surface of the first block13.",
+   "zh_terms_lost": [
+    "sipe"
+   ],
+   "zh_numbers_kept": false
+  },
+  {
+   "original": "The pneumatic tire according to claim 2 , wherein the bent portions of the rubber coated cord do not include a portion extending linearly in the tire circumferential direction in the developed view of the endless belt.",
+   "de": "Der pneumatische Reifen nach Anspruch 2, wobei die gebogenen Teile der Gummi-beschichteten Schnur keinen linear in der Reifenumlaufrichtung in der entwickelten Sicht des endlosen Gurtes verlaufenden Teil enthalten.",
+   "de_back": "The pneumatic tyre according to claim 2, whereby the curved parts of the rubber-coated cord do not contain a linear part in the tyre circulation direction in the developed view of the endless belt.",
+   "de_terms_lost": [],
+   "de_numbers_kept": true,
+   "zh": "272. 索赔2所称的充气轮胎,橡胶涂层索的弯曲部分不包括无尽带的发达视图中轮胎环形方向线直线延伸的部分。",
+   "zh_back": "272. The curvature part of the rubber coating line does not include the straight extension of the circular direction line of the tyre in an endless developed view, as asserted in claim 2.",
+   "zh_terms_lost": [
+    "belt"
+   ],
+   "zh_numbers_kept": false
+  },
+  {
+   "original": "As shown inFIGS.3and4, the chamfer21cis a sloped surface24extending from the ground contacting top surface11sto the groove wall21wat a certain angle with respect to a normal line to the ground contacting top surface in a cross section perpendicular to the length direction of the lateral groove.",
+   "de": "Wie in FIGS.3und4 gezeigt, weist der Fasenf21cis eine schräge Oberfläche24aus, die sich vom Boden ausberührt, der die Oberfläche berührt11szur Nutwand21wat einen bestimmten Winkel hinsichtlich einer normalen Linie zur Bodenberührungsoberfläche in einem Querschnitt senkrecht zur Längenrichtung der Seitenrute.",
+   "de_back": "As shown in FIGS.3and4, the fasenf21cis has an oblique surface24 that touches the ground that touches the surface11sto the groove wall21wat a certain angle with respect to a normal line to the ground surface in a cross section perpendicular to the length direction of the side rod.",
+   "de_terms_lost": [],
+   "de_numbers_kept": true,
+   "zh": "FIGS.3和4中显示,从地面向上延伸的斜坡表面24 的Chamfer21cis 与顶层表面11s 到槽壁21wat 上方一个角度,与正常线向下方的地面接触,与侧侧角角方向垂直的交叉部分与顶部表面相连接。",
+   "zh_back": "FIGS.3 and 4 shows that the surface of the slope from the ground up24, Chamfer21cis, from the top floor to the top surface of 11s to the top of the sink wall, is in contact with the ground below the normal line and is connected to the top surface in vertical cross-sections in the direction of the side corner.",
+   "zh_terms_lost": [
+    "groove"
+   ],
+   "zh_numbers_kept": false
+  }
+ ],
+ "numbers_and_units": {
+  "English to de (the test set, all translated passages)": {
+   "passages": 5598,
+   "numbers_identical": 4902,
+   "share": 0.8757,
+   "passages_with_units": 637,
+   "units_identical": 526,
+   "examples_of_changed_numbers": [
+    {
+     "en": "17 . The rubberized metallic strength member as claimed in claim 11 , wherein it contains 1 to 2.5 phr of at least one sulfenimide accelerator and/or at least o",
+     "de": "17 . Das gummierte Metallkraftglied gemäß Anspruch 11, in dem es 1 bis 2,5 Stunden mindestens einen Sulfenimidbeschleuniger und/oder mindestens einen Sulfenamid",
+     "en_numbers": [
+      "17",
+      "11",
+      "1",
+      "2.5"
+     ],
+     "de_numbers": [
+      "17",
+      "11",
+      "1",
+      "2,5"
+     ]
+    },
+    {
+     "en": "As may be visualized in the second perspective view450, an interior area434of the flange414decreases from the first end442towards the flange/arm transition406. ",
+     "de": "Wie in der zweiten Perspektive dargestellt, verringert sich vom ersten Ende442 zum Flansch/Armübergang406 ein Innenraumbereich434 des Flanschs414. Die Innenstüt",
+     "en_numbers": [
+      "450",
+      "434",
+      "414",
+      "442",
+      "406",
+      "408",
+      "412",
+      "402",
+      "408",
+      "5",
+      "428",
+      "430"
+     ],
+     "de_numbers": [
+      "442",
+      "406",
+      "434",
+      "414",
+      "408",
+      "412",
+      "402",
+      "408",
+      "5",
+      "428",
+      "430",
+      "436"
+     ]
+    },
+    {
+     "en": "Each of the first inside sloped face211and second inside sloped face212extends to the end in the tire-width direction of the outer circumferential surface20a.In",
+     "de": "Jede der ersten inne- und die zweite inne- und die schräge Seite212extendiert in der Reifenbreitenrichtung der äußeren Umrandung20a bis zum Ende.Mit anderen Wor",
+     "en_numbers": [
+      "211",
+      "212",
+      "20",
+      "21",
+      "20",
+      "211",
+      "212"
+     ],
+     "de_numbers": [
+      "212",
+      "20",
+      "21",
+      "20",
+      "211"
+     ]
+    }
+   ]
+  },
+  "de to English (what is displayed, 100 passages with a number)": {
+   "numbers_identical": 90,
+   "of": 100,
+   "stuck_repeating": 0,
+   "examples_of_changed_numbers": [
+    {
+     "de": "Der Reifen nach Anspruch 12, wobei die Textilbänder im Wesentlichen parallel zueinander angeordnet sind, in dem mindestens eine der Schichten mit 1,5 EPI bis 20",
+     "en": "The tyre according to claim 12, whereby the textile tapes are essentially parallel to each other, in which at least one of the layers with 1.5 EPI to 20 EPI is "
+    },
+    {
+     "de": "Die Konfiguration der Spulenfedern80,81erreicht eine Verbesserung des Freilaufsystems. Die optimierte Spulenfeder ermöglicht eine Reduzierung der verpassten Eng",
+     "en": "The configuration of coil springs80.81 achieves an improvement of the freewheel system. The optimized coil spring allows to achieve a reduction in missed engage"
+    },
+    {
+     "de": "In einigen Verkörperungen liegt die Vulkanisationszeit des flachfleckigen Reifens im Bereich von 16 bis 18 Minuten, und ein Inflationsdruck nach Vulkanisierung ",
+     "en": "In some cases, the vulcanisation time of the flat-spotted tire is in the range of 16 to 18 minutes, and inflationary pressure after vulcanisation is in the rang"
+    }
+   ]
+  },
+  "English to zh (the test set, all translated passages)": {
+   "passages": 5598,
+   "numbers_identical": 3684,
+   "share": 0.6581,
+   "passages_with_units": 637,
+   "units_identical": 264,
+   "examples_of_changed_numbers": [
+    {
+     "en": "When the tread portion2is composed of a plurality of rubber materials, the tread rubber2G is the rubber material forming the ground contact surface2s, for examp",
+     "zh": "当胎面部分2由多种橡胶材料组成时,胎面橡胶2G是构成地面接触面2 的橡胶材料,例如,胎面橡胶2G的切值正正当度正弦2 °A 表示构成地面接触面2 的橡胶材料的切值2 (例如,顶橡胶2A)。基底橡胶2B在70摄氏度时的损耗正切正正弦 °B也更好。低于30摄氏度时顶橡胶2A的切差正正时正方正方位A。这种足迹部分2 有助于改",
+     "en_numbers": [
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "70",
+      "2",
+      "30",
+      "2",
+      "1"
+     ],
+     "zh_numbers": [
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "70",
+      "30",
+      "2"
+     ]
+    },
+    {
+     "en": "3 . The flat tire airbag system of claim 1 , wherein the airbag inflation mechanism includes a gas generator that uses a propellant to generate pressurized gas ",
+     "zh": "3 . 281. 索赔1中的平板轮胎气囊系统,气袋通货膨胀机制包括一个气体发电机,它使用推进剂产生加压气体,一旦发现轮胎压力监测系统造成压力损失,立即将气体直接射入内管。",
+     "en_numbers": [
+      "3",
+      "1"
+     ],
+     "zh_numbers": [
+      "3",
+      "281",
+      "1"
+     ]
+    },
+    {
+     "en": "As illustrated inFIG.4, a length L7in the tire axial direction of the first portion11is defined as a length in the tire axial direction from the outer end11aon ",
+     "zh": "如FIG.4所示,轮胎前半部分11is轴向L7长度被定义为轮胎左侧11aon外侧轴向的长度,第一个跑道边缘T1侧至另一个跑道11bon外端1111。最好将目前化形体中轮胎头部分11的轴向L7长度在胎面宽度的90%至110%之间。这样,就有可能可靠地减少车辆内部噪音,同时抑制轮胎重量的增加。例如,第一部分的L7长度11 ",
+     "en_numbers": [
+      "4",
+      "7",
+      "11",
+      "11",
+      "1",
+      "11",
+      "2",
+      "11",
+      "7",
+      "11",
+      "90",
+      "110"
+     ],
+     "zh_numbers": [
+      "4",
+      "11",
+      "7",
+      "11",
+      "1",
+      "11",
+      "1111",
+      "11",
+      "7",
+      "90",
+      "110",
+      "7"
+     ]
+    }
+   ]
+  },
+  "zh to English (what is displayed, 100 passages with a number)": {
+   "numbers_identical": 38,
+   "of": 100,
+   "stuck_repeating": 0,
+   "examples_of_changed_numbers": [
+    {
+     "zh": "现参照FIG.2a, 演示了一种前非限制型的TPMS 阀门10, 前者的原工艺品TPMS 阀门102 ,其中,干料202(例如黄铜干等)被橡胶夹克或涂层200(或其他一些聚合材料)过度磨制,橡胶夹克或涂层形成密封区201和橡胶夹层或涂层200外表面的座椅203。",
+     "en": "Reference is made to FIG.2a, where a former non-restricted TPMS valve, 102 of the original technical TPMS valve, 202 (e.g., bronze drying) is overpolished by ru"
+    },
+    {
+     "zh": "FIG.6 显示一个参考图,其中扩大第一个肩膀环绕角角的横截面视图5 和第一个中间轴角角25 的侧侧侧交叉面视图。如FIG.6所示,第一只肩围绕的粗壁5 最好各有1个角,5A 轮胎正常线大于1角7, 轮胎正常线大于1角75, 第一个中间轴壁的每个角的每个角的粗壁25 A 的轮胎正常线25。具体来说,角度 6is 介于1",
+     "en": "Fig.6 displays a reference chart that expands the cross-sectional view of the first shoulder rounded corner 5 and the side cross-sectional view of the first cen"
+    },
+    {
+     "zh": "电话102套电话的数量可因轮胎的应用和/或尺寸而异100。例如,随着轮胎100的长度沿轴向A上升,轮胎100可轻易容纳更多的话筒102。同样,每套话筒的数量也可能因轮胎的应用和/或尺寸而不同100。FIGS.6A和6Bdepict 36个讲解102per设置在环形方向C,还设想了由每套讲解102per或较少的音频组成的",
+     "en": "The number of 102 telephones may vary by 100 according to the application and/or size of the tyres. For example, as the length of tyres rises along a axis 100, "
+    }
+   ]
+  }
+ }
+}

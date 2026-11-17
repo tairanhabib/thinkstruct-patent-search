@@ -1,0 +1,25 @@
+ 1. 20240359507 | Mixed-Use Heavy-Duty Vehicle Tire with Low Road Noise
+      score 0.0325 | similarity 0.865 | keyword rank 1
+      classification B60C1111FI | filing week 2024-10-31 | language en | missing: detailed_description
+      Evidence, abstract:
+        A tire ( 1 ) for a heavy goods vehicle having a tread ( 2 ) with low road noise. Two consecutive rows
+        of blocks are in the form of a chevron ( 6 ) of the tread ( 2 ) and are separated by a transverse cut-
+        out in the form of a chevron ( 52 ) which extends continuously from one edge of the tread to the other
+        so that the leading or trailing edges ( 41 ) of the blocks ( 4 ) are positioned in the same line (L)
+        and any transverse cut-out in the form of a chevron ( 52 ) has a mean line (Lt) which is constituted
+        by two branches (Lt 1 , Lt 2 ) which each form, with the axial direction (YY′), a mean angl ...
+ 2. 20240239141 | SOUNDPROOF TYRE FOR VEHICLE WHEELS
+      score 0.0323 | similarity 0.894 | keyword rank 3
+      classification B60C1900FI | filing week 2024-07-18 | language en
+      Evidence, description paragraph 50:
+        Preferably, the noise reducing element is disposed on the radially inner surface of the vulcanised
+        layer of airtight elastomeric compound, which extends by the entire circumference of the tyre and
+        axially at least at a part of the tread band of the tyre, preferably comprised between 10% and 70% of
+        the width of the tread band of the tyre.
+ 3. 20240208264 | REDUCED NOISE WHEEL HUB UNIT
+      score 0.0320 | similarity 0.849 | keyword rank 2
+      classification B60B2700FI | filing week 2024-06-27 | language en
+      Evidence, claim 19 (number inferred, opening words missing in the source):
+        wherein the new surface roughness is from 0.20 μm to 6 μm.
+Startup (load index and model): 7.1 s
+3 patents passed the filters, 171 vectors kept. 26 ms: translate query 0, encode query 21, filter 1.9, score 1.2, keyword 1.4, fuse and fetch 0.2, translate 0

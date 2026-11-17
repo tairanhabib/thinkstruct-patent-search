@@ -1,0 +1,822 @@
+{
+ "cells": 136,
+ "flagged": 21,
+ "rows": [
+  [
+   "With and without hybrid sear | semantic only (hybrid off) | Whole call",
+   15.9,
+   16.3,
+   0.02515723270440251
+  ],
+  [
+   "With and without hybrid sear | semantic only (hybrid off) | Whole call p95",
+   20.8,
+   22.2,
+   0.06730769230769229
+  ],
+  [
+   "With and without hybrid sear | semantic only (hybrid off) | Without encoding the query",
+   1.9,
+   2.78,
+   0.463157894736842
+  ],
+  [
+   "With and without hybrid sear | semantic only (hybrid off) | Without encoding the query p95",
+   2.76,
+   3.43,
+   0.242753623188406
+  ],
+  [
+   "With and without hybrid sear | semantic only (hybrid off) | Encode query",
+   14.0,
+   13.9,
+   -0.0071428571428571175
+  ],
+  [
+   "With and without hybrid sear | semantic only (hybrid off) | Score vectors",
+   1.44,
+   2.27,
+   0.5763888888888891
+  ],
+  [
+   "With and without hybrid sear | semantic only (hybrid off) | Fuse and fetch",
+   0.41,
+   0.44,
+   0.07317073170731714
+  ],
+  [
+   "With and without hybrid sear | keyword only | Whole call",
+   1.2,
+   1.2,
+   0.0
+  ],
+  [
+   "With and without hybrid sear | keyword only | Whole call p95",
+   4.2,
+   4.2,
+   0.0
+  ],
+  [
+   "With and without hybrid sear | keyword only | Without encoding the query",
+   1.08,
+   1.03,
+   -0.04629629629629628
+  ],
+  [
+   "With and without hybrid sear | keyword only | Without encoding the query p95",
+   1.37,
+   1.3,
+   -0.051094890510948954
+  ],
+  [
+   "With and without hybrid sear | keyword only | Keyword ranking",
+   0.59,
+   0.58,
+   -0.016949152542372947
+  ],
+  [
+   "With and without hybrid sear | keyword only | Fuse and fetch",
+   0.48,
+   0.44,
+   -0.08333333333333326
+  ],
+  [
+   "With and without hybrid sear | hybrid (keyword + semantic) | Whole call",
+   17.0,
+   17.8,
+   0.04705882352941182
+  ],
+  [
+   "With and without hybrid sear | hybrid (keyword + semantic) | Whole call p95",
+   22.2,
+   22.6,
+   0.018018018018018056
+  ],
+  [
+   "With and without hybrid sear | hybrid (keyword + semantic) | Without encoding the query",
+   2.62,
+   3.54,
+   0.35114503816793885
+  ],
+  [
+   "With and without hybrid sear | hybrid (keyword + semantic) | Without encoding the query p95",
+   3.25,
+   4.1,
+   0.2615384615384615
+  ],
+  [
+   "With and without hybrid sear | hybrid (keyword + semantic) | Encode query",
+   14.4,
+   14.3,
+   -0.00694444444444442
+  ],
+  [
+   "With and without hybrid sear | hybrid (keyword + semantic) | Score vectors",
+   1.42,
+   2.31,
+   0.6267605633802817
+  ],
+  [
+   "With and without hybrid sear | hybrid (keyword + semantic) | Keyword ranking",
+   0.69,
+   0.72,
+   0.04347826086956519
+  ],
+  [
+   "With and without hybrid sear | hybrid (keyword + semantic) | Fuse and fetch",
+   0.49,
+   0.48,
+   -0.020408163265306145
+  ],
+  [
+   "Hybrid search with filters:  | none | Filter first",
+   1.4,
+   2.3,
+   0.6428571428571428
+  ],
+  [
+   "Hybrid search with filters:  | none | Whole call, auto",
+   2.66,
+   3.56,
+   0.33834586466165417
+  ],
+  [
+   "Hybrid search with filters:  | none | Whole call, auto p95",
+   3.41,
+   4.13,
+   0.21114369501466257
+  ],
+  [
+   "Hybrid search with filters:  | classification B60 (all) | Filter first",
+   16.91,
+   13.24,
+   -0.21703134240094613
+  ],
+  [
+   "Hybrid search with filters:  | classification B60 (all) | Filter after",
+   2.19,
+   2.81,
+   0.2831050228310503
+  ],
+  [
+   "Hybrid search with filters:  | classification B60 (all) | Auto (default)",
+   2.11,
+   2.75,
+   0.3033175355450237
+  ],
+  [
+   "Hybrid search with filters:  | classification B60 (all) | Whole call, auto",
+   3.31,
+   3.96,
+   0.1963746223564955
+  ],
+  [
+   "Hybrid search with filters:  | classification B60 (all) | Whole call, auto p95",
+   3.95,
+   4.35,
+   0.10126582278481
+  ],
+  [
+   "Hybrid search with filters:  | classification B60C (tires) | Filter first",
+   7.66,
+   6.75,
+   -0.118798955613577
+  ],
+  [
+   "Hybrid search with filters:  | classification B60C (tires) | Filter after",
+   1.93,
+   2.42,
+   0.2538860103626943
+  ],
+  [
+   "Hybrid search with filters:  | classification B60C (tires) | Auto (default)",
+   1.85,
+   2.44,
+   0.31891891891891877
+  ],
+  [
+   "Hybrid search with filters:  | classification B60C (tires) | Whole call, auto",
+   3.02,
+   3.53,
+   0.16887417218543033
+  ],
+  [
+   "Hybrid search with filters:  | classification B60C (tires) | Whole call, auto p95",
+   3.72,
+   4.46,
+   0.19892473118279552
+  ],
+  [
+   "Hybrid search with filters:  | classification B60B (wheels) | Filter first",
+   6.35,
+   5.58,
+   -0.12125984251968502
+  ],
+  [
+   "Hybrid search with filters:  | classification B60B (wheels) | Filter after",
+   1.78,
+   2.3,
+   0.292134831460674
+  ],
+  [
+   "Hybrid search with filters:  | classification B60B (wheels) | Auto (default)",
+   1.87,
+   2.48,
+   0.3262032085561497
+  ],
+  [
+   "Hybrid search with filters:  | classification B60B (wheels) | Whole call, auto",
+   2.96,
+   3.55,
+   0.19932432432432434
+  ],
+  [
+   "Hybrid search with filters:  | classification B60B (wheels) | Whole call, auto p95",
+   3.69,
+   3.99,
+   0.08130081300813008
+  ],
+  [
+   "Hybrid search with filters:  | keyword: rubber | Filter first",
+   1.18,
+   0.9,
+   -0.23728813559322026
+  ],
+  [
+   "Hybrid search with filters:  | keyword: rubber | Filter after",
+   1.45,
+   2.11,
+   0.45517241379310347
+  ],
+  [
+   "Hybrid search with filters:  | keyword: rubber | Auto (default)",
+   1.03,
+   0.91,
+   -0.11650485436893199
+  ],
+  [
+   "Hybrid search with filters:  | keyword: rubber | Whole call, auto",
+   2.01,
+   1.87,
+   -0.06965174129353213
+  ],
+  [
+   "Hybrid search with filters:  | keyword: rubber | Whole call, auto p95",
+   2.76,
+   2.42,
+   -0.12318840579710144
+  ],
+  [
+   "Hybrid search with filters:  | classification B60C11 (treads) | Filter first",
+   2.12,
+   1.87,
+   -0.11792452830188682
+  ],
+  [
+   "Hybrid search with filters:  | classification B60C11 (treads) | Filter after",
+   1.67,
+   2.28,
+   0.3652694610778442
+  ],
+  [
+   "Hybrid search with filters:  | classification B60C11 (treads) | Auto (default)",
+   1.65,
+   2.31,
+   0.40000000000000013
+  ],
+  [
+   "Hybrid search with filters:  | classification B60C11 (treads) | Whole call, auto",
+   2.78,
+   3.32,
+   0.1942446043165469
+  ],
+  [
+   "Hybrid search with filters:  | classification B60C11 (treads) | Whole call, auto p95",
+   3.54,
+   3.86,
+   0.09039548022598876
+  ],
+  [
+   "Hybrid search with filters:  | filing weeks 2024-06 to 2024-08 | Filter first",
+   1.85,
+   1.43,
+   -0.22702702702702715
+  ],
+  [
+   "Hybrid search with filters:  | filing weeks 2024-06 to 2024-08 | Filter after",
+   1.43,
+   2.03,
+   0.4195804195804196
+  ],
+  [
+   "Hybrid search with filters:  | filing weeks 2024-06 to 2024-08 | Auto (default)",
+   1.7,
+   2.05,
+   0.2058823529411764
+  ],
+  [
+   "Hybrid search with filters:  | filing weeks 2024-06 to 2024-08 | Whole call, auto",
+   2.73,
+   3.12,
+   0.1428571428571428
+  ],
+  [
+   "Hybrid search with filters:  | filing weeks 2024-06 to 2024-08 | Whole call, auto p95",
+   3.65,
+   3.66,
+   0.00273972602739736
+  ],
+  [
+   "Hybrid search with filters:  | keyword: sensor | Filter first",
+   0.46,
+   0.45,
+   -0.021739130434782594
+  ],
+  [
+   "Hybrid search with filters:  | keyword: sensor | Filter after",
+   1.89,
+   1.9,
+   0.005291005291005346
+  ],
+  [
+   "Hybrid search with filters:  | keyword: sensor | Auto (default)",
+   0.47,
+   0.45,
+   -0.04255319148936165
+  ],
+  [
+   "Hybrid search with filters:  | keyword: sensor | Whole call, auto",
+   1.43,
+   1.39,
+   -0.027972027972028024
+  ],
+  [
+   "Hybrid search with filters:  | keyword: sensor | Whole call, auto p95",
+   1.92,
+   1.72,
+   -0.10416666666666663
+  ],
+  [
+   "Hybrid search with filters:  | classification B60D (hitches) | Filter first",
+   0.54,
+   0.43,
+   -0.20370370370370372
+  ],
+  [
+   "Hybrid search with filters:  | classification B60D (hitches) | Filter after",
+   1.4,
+   2.03,
+   0.44999999999999996
+  ],
+  [
+   "Hybrid search with filters:  | classification B60D (hitches) | Auto (default)",
+   0.46,
+   0.49,
+   0.06521739130434767
+  ],
+  [
+   "Hybrid search with filters:  | classification B60D (hitches) | Whole call, auto",
+   1.38,
+   1.45,
+   0.050724637681159424
+  ],
+  [
+   "Hybrid search with filters:  | classification B60D (hitches) | Whole call, auto p95",
+   1.73,
+   1.88,
+   0.08670520231213863
+  ],
+  [
+   "Hybrid search with filters:  | B60C + keywords: noise | Filter first",
+   0.23,
+   0.3,
+   0.3043478260869563
+  ],
+  [
+   "Hybrid search with filters:  | B60C + keywords: noise | Filter after",
+   1.35,
+   1.88,
+   0.3925925925925924
+  ],
+  [
+   "Hybrid search with filters:  | B60C + keywords: noise | Auto (default)",
+   0.24,
+   0.24,
+   0.0
+  ],
+  [
+   "Hybrid search with filters:  | B60C + keywords: noise | Whole call, auto",
+   1.05,
+   1.06,
+   0.00952380952380949
+  ],
+  [
+   "Hybrid search with filters:  | B60C + keywords: noise | Whole call, auto p95",
+   1.33,
+   1.34,
+   0.007518796992481258
+  ],
+  [
+   "Hybrid search with filters:  | title contains: wheel bearing | Filter first",
+   0.4,
+   0.41,
+   0.02499999999999991
+  ],
+  [
+   "Hybrid search with filters:  | title contains: wheel bearing | Filter after",
+   1.64,
+   2.28,
+   0.3902439024390243
+  ],
+  [
+   "Hybrid search with filters:  | title contains: wheel bearing | Auto (default)",
+   0.42,
+   0.42,
+   0.0
+  ],
+  [
+   "Hybrid search with filters:  | title contains: wheel bearing | Whole call, auto",
+   1.25,
+   1.23,
+   -0.016000000000000014
+  ],
+  [
+   "Hybrid search with filters:  | title contains: wheel bearing | Whole call, auto p95",
+   1.53,
+   1.54,
+   0.006535947712418277
+  ],
+  [
+   "Part 2: the scoring step alo | none | Filter first",
+   73.7,
+   68.2,
+   -0.07462686567164178
+  ],
+  [
+   "Part 2: the scoring step alo | none | Filter first p95",
+   79.7,
+   71.3,
+   -0.10539523212045177
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60 (all) | Filter first",
+   495.9,
+   471.8,
+   -0.048598507763661924
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60 (all) | Filter first p95",
+   594.9,
+   1025.4,
+   0.7236510337871913
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60 (all) | Filter after",
+   81.1,
+   73.1,
+   -0.09864364981504314
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60 (all) | Filter after p95",
+   82.9,
+   81.1,
+   -0.021712907117008573
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60 (all) | Auto (default)",
+   80.1,
+   75.3,
+   -0.059925093632958726
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60 (all) | Auto (default) p95",
+   84.0,
+   79.9,
+   -0.04880952380952375
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60C (tires) | Filter first",
+   264.8,
+   242.1,
+   -0.08572507552870101
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60C (tires) | Filter first p95",
+   278.4,
+   298.9,
+   0.07363505747126431
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60C (tires) | Filter after",
+   74.5,
+   67.4,
+   -0.09530201342281874
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60C (tires) | Filter after p95",
+   77.2,
+   71.2,
+   -0.07772020725388595
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60C (tires) | Auto (default)",
+   73.6,
+   67.9,
+   -0.07744565217391286
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60C (tires) | Auto (default) p95",
+   76.2,
+   71.3,
+   -0.06430446194225725
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60B (wheels) | Filter first",
+   217.3,
+   197.4,
+   -0.09157846295444083
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60B (wheels) | Filter first p95",
+   229.1,
+   240.7,
+   0.05063291139240511
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60B (wheels) | Filter after",
+   68.3,
+   66.6,
+   -0.024890190336749662
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60B (wheels) | Filter after p95",
+   70.5,
+   69.8,
+   -0.009929078014184411
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60B (wheels) | Auto (default)",
+   67.8,
+   67.3,
+   -0.007374631268436627
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60B (wheels) | Auto (default) p95",
+   69.8,
+   70.0,
+   0.002865329512893977
+  ],
+  [
+   "Part 2: the scoring step alo | keyword: rubber | Filter first",
+   51.6,
+   52.9,
+   0.025193798449612448
+  ],
+  [
+   "Part 2: the scoring step alo | keyword: rubber | Filter first p95",
+   56.4,
+   59.0,
+   0.046099290780141855
+  ],
+  [
+   "Part 2: the scoring step alo | keyword: rubber | Filter after",
+   63.5,
+   62.3,
+   -0.018897637795275646
+  ],
+  [
+   "Part 2: the scoring step alo | keyword: rubber | Filter after p95",
+   65.7,
+   63.0,
+   -0.04109589041095896
+  ],
+  [
+   "Part 2: the scoring step alo | keyword: rubber | Auto (default)",
+   51.2,
+   51.8,
+   0.011718749999999778
+  ],
+  [
+   "Part 2: the scoring step alo | keyword: rubber | Auto (default) p95",
+   53.4,
+   56.0,
+   0.048689138576779145
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60C11 (treads) | Filter first",
+   85.4,
+   86.1,
+   0.008196721311475308
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60C11 (treads) | Filter first p95",
+   91.4,
+   90.1,
+   -0.01422319474835898
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60C11 (treads) | Filter after",
+   64.8,
+   63.7,
+   -0.016975308641975273
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60C11 (treads) | Filter after p95",
+   66.5,
+   67.0,
+   0.007518796992481258
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60C11 (treads) | Auto (default)",
+   64.9,
+   63.2,
+   -0.026194144838212696
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60C11 (treads) | Auto (default) p95",
+   72.8,
+   63.9,
+   -0.12225274725274726
+  ],
+  [
+   "Part 2: the scoring step alo | filing weeks 2024-06 to 2024-08 | Filter first",
+   90.7,
+   82.1,
+   -0.0948180815876517
+  ],
+  [
+   "Part 2: the scoring step alo | filing weeks 2024-06 to 2024-08 | Filter first p95",
+   97.1,
+   94.2,
+   -0.029866117404737325
+  ],
+  [
+   "Part 2: the scoring step alo | filing weeks 2024-06 to 2024-08 | Filter after",
+   67.8,
+   62.9,
+   -0.07227138643067843
+  ],
+  [
+   "Part 2: the scoring step alo | filing weeks 2024-06 to 2024-08 | Filter after p95",
+   72.5,
+   65.0,
+   -0.10344827586206895
+  ],
+  [
+   "Part 2: the scoring step alo | filing weeks 2024-06 to 2024-08 | Auto (default)",
+   68.6,
+   62.7,
+   -0.08600583090378999
+  ],
+  [
+   "Part 2: the scoring step alo | filing weeks 2024-06 to 2024-08 | Auto (default) p95",
+   70.9,
+   63.5,
+   -0.10437235543018342
+  ],
+  [
+   "Part 2: the scoring step alo | keyword: sensor | Filter first",
+   26.5,
+   22.2,
+   -0.1622641509433963
+  ],
+  [
+   "Part 2: the scoring step alo | keyword: sensor | Filter first p95",
+   28.8,
+   24.4,
+   -0.1527777777777779
+  ],
+  [
+   "Part 2: the scoring step alo | keyword: sensor | Filter after",
+   66.1,
+   62.7,
+   -0.05143721633888032
+  ],
+  [
+   "Part 2: the scoring step alo | keyword: sensor | Filter after p95",
+   70.1,
+   65.6,
+   -0.0641940085592011
+  ],
+  [
+   "Part 2: the scoring step alo | keyword: sensor | Auto (default)",
+   26.8,
+   23.7,
+   -0.11567164179104483
+  ],
+  [
+   "Part 2: the scoring step alo | keyword: sensor | Auto (default) p95",
+   29.4,
+   30.6,
+   0.04081632653061229
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60D (hitches) | Filter first",
+   14.1,
+   12.2,
+   -0.13475177304964547
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60D (hitches) | Filter first p95",
+   16.6,
+   15.0,
+   -0.09638554216867479
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60D (hitches) | Filter after",
+   66.2,
+   63.3,
+   -0.04380664652567989
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60D (hitches) | Filter after p95",
+   68.6,
+   67.9,
+   -0.01020408163265285
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60D (hitches) | Auto (default)",
+   14.4,
+   12.4,
+   -0.13888888888888884
+  ],
+  [
+   "Part 2: the scoring step alo | classification B60D (hitches) | Auto (default) p95",
+   15.6,
+   14.1,
+   -0.09615384615384615
+  ],
+  [
+   "Part 2: the scoring step alo | B60C + keywords: noise | Filter first",
+   4.3,
+   3.1,
+   -0.2790697674418604
+  ],
+  [
+   "Part 2: the scoring step alo | B60C + keywords: noise | Filter first p95",
+   5.6,
+   4.8,
+   -0.1428571428571428
+  ],
+  [
+   "Part 2: the scoring step alo | B60C + keywords: noise | Filter after",
+   65.9,
+   63.2,
+   -0.04097116843702586
+  ],
+  [
+   "Part 2: the scoring step alo | B60C + keywords: noise | Filter after p95",
+   69.2,
+   64.2,
+   -0.0722543352601156
+  ],
+  [
+   "Part 2: the scoring step alo | B60C + keywords: noise | Auto (default)",
+   4.2,
+   2.9,
+   -0.30952380952380953
+  ],
+  [
+   "Part 2: the scoring step alo | B60C + keywords: noise | Auto (default) p95",
+   5.4,
+   3.5,
+   -0.35185185185185186
+  ],
+  [
+   "Part 2: the scoring step alo | title contains: wheel bearing | Filter first",
+   3.9,
+   2.9,
+   -0.2564102564102564
+  ],
+  [
+   "Part 2: the scoring step alo | title contains: wheel bearing | Filter first p95",
+   5.5,
+   3.1,
+   -0.4363636363636364
+  ],
+  [
+   "Part 2: the scoring step alo | title contains: wheel bearing | Filter after",
+   65.9,
+   60.6,
+   -0.08042488619119881
+  ],
+  [
+   "Part 2: the scoring step alo | title contains: wheel bearing | Filter after p95",
+   68.3,
+   62.7,
+   -0.08199121522693986
+  ],
+  [
+   "Part 2: the scoring step alo | title contains: wheel bearing | Auto (default)",
+   4.0,
+   3.0,
+   -0.25
+  ],
+  [
+   "Part 2: the scoring step alo | title contains: wheel bearing | Auto (default) p95",
+   5.4,
+   4.2,
+   -0.2222222222222222
+  ]
+ ]
+}

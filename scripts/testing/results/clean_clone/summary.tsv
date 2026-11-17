@@ -1,0 +1,25 @@
+step	exit	seconds	peak_rss_mb	command
+clone	0	0.12	5	git clone -q 'REPO' 'SCRATCH/clean/clone'
+venv	0	2.21	99	python3.11 -m venv .venv
+pip_install	0	33.56	364	pip install -r requirements.txt
+unzip	0	0.16	2	mkdir -p data/small && unzip -j 'REPO/UTF-8patent_data_small (1).zip' '*.json' -d data/small && ls data/small | wc -l
+ingest_small	0	137.41	1459	python cli.py ingest data/small
+search_1	0	9.62	1114	python cli.py search 'wheel hub with integrated pressure sensor' --cpc B60B --top 5
+search_2	0	8.52	1103	python cli.py search 'tire tread that reduces road noise' --keywords 'noise' --from 2024-06-01 --to 2024-12-31 --top 5
+search_3	0	0.21	87	python cli.py search --title 'pneumatic tire' --cpc B60C11 --top 5
+similar	0	8.56	1103	python cli.py similar --doc 20240051333 --claim 1 --top 5
+show	0	0.19	87	python cli.py show --doc 20240051339
+search_warm	0	8.46	1113	python cli.py search 'wheel hub with integrated pressure sensor' --cpc B60B --top 5
+benchmark	0	169.77	3542	python scripts/benchmark.py
+pytest	0	1.91	125	python -m pytest
+make_parallel_set	0	1146.29	1082	python scripts/make_parallel_set.py
+ingest_parallel	0	339.93	1019	python cli.py ingest data/parallel
+evaluate_multilingual	0	537.28	1134	python scripts/evaluate_multilingual.py
+p3_search_1	0	15.22	1928	python cli.py search 'tyre monitor with an energy harvester that charges the sensor' --top 5
+p3_search_2	0	8.44	1167	python cli.py search 'tyre monitor with an energy harvester that charges the sensor' --top 5 --cross-lingual shared
+p3_search_3	0	12.28	1653	python cli.py search 'pressure sensor that reports tire pressure to the driver' --language de --top 3
+p3_search_4	0	11.07	1594	python cli.py search '轮辋上带有压力传感器的车轮' --top 3 --show-original
+p3_show	0	8.26	911	python cli.py show --doc 20240083200-ZH
+docker	127	0.00	1	docker compose up -d --wait
+poc_pip	0	3.20	88	pip install -r poc/requirements.txt
+poc_pgserver	0	33.48	1230	python poc/load_and_query.py --pgserver 'SCRATCH/clean/patent-poc-pgdata'

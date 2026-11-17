@@ -1,0 +1,12 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.11.15, pytest-9.2.0, pluggy-1.7.0
+rootdir: SCRATCH/clean/clone
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-4.16.0
+collected 93 items
+tests/test_ingest.py ..............                                      [ 15%]
+tests/test_missing_fields.py ........................................... [ 61%]
+............                                                             [ 74%]
+tests/test_search.py ........................                            [100%]
+============================== 93 passed in 1.26s ==============================

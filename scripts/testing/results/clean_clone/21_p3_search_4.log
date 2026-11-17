@@ -1,0 +1,21 @@
+Query searched in: de, en, zh.
+ 1. 20240140145 | MODULAR TIRE PRESSURE MONITORING SYSTEM (TPMS) SENSOR WITH EASILY REMOVABLE AND REPLACEABLE BATTERY
+      score 0.0320 | similarity 0.910 | keyword rank 4
+      classification B60C2304FI | filing week 2024-05-02 | language en
+      Evidence, description paragraph 110:
+        In some aspects, the techniques described herein relate to a pressure monitoring system where the
+        pressure sensor (1420) detects an air pressure in a tire attached to the tire rim.
+ 2. 20240336095 | TIRE INFLATION SYSTEM AND COMMERCIAL VEHICLE WITH A TIRE INFLATION SYSTEM AND METHOD OF OPERATING A TIRE INFLATION SYSTEM
+      score 0.0308 | similarity 0.891 | keyword rank 3
+      classification B60C2300FI | filing week 2024-10-10 | language en
+      Evidence, claim 22 (depends on claim 16):
+        The commercial vehicle according to claim 16 , wherein the tire inflation system has a pressure input
+        sensor configured to detect a pressure at the flow input.
+ 3. 20250108668 | TIRE WITH ATTACHED COMPONENT AND SENSOR CONTAINER ASSEMBLY
+      score 0.0294 | similarity 0.890 | keyword rank 7
+      classification B60C2304FI | filing week 2025-04-03 | language en
+      Evidence, description paragraph 40:
+        In still another embodiment, the pressure sensor is adapted to measure pressure and optionally one or
+        more of temperature, and acceleration.
+Startup (load index and model): 6.9 s
+840 patents passed the filters, 44599 vectors kept. 2745 ms: translate query 2703, encode query 33, filter 0.0, score 7.9, keyword 1.1, fuse and fetch 0.5, translate 0
