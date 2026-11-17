@@ -695,7 +695,7 @@ On battery in Low Power Mode.
 
 The benchmark has now been run five times since the sort was removed. The direction of every comparison was the same
 each time. The size of the advantage moved: a 1% filter was 3.2, 5.8, 5.7, 5.3 and 4.1 times faster on the real index,
-and 18.6, 20.2, 20.5 and 17.1 times at a million vectors.
+and 18.6, 18.6, 20.2, 20.5 and 17.1 times at a million vectors.
 
 ### What I take from this
 
