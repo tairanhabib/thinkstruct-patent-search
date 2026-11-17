@@ -18,6 +18,7 @@ from .embed import CJK, windows
 
 DetectorFactory.seed = 0  # langdetect gives different answers between runs without a seed
 MODEL_PATTERN = "Helsinki-NLP/opus-mt-{source}-{target}"
+_REPEAT = re.compile(r"(.{1,20}?)\1{5,}", re.S)
 
 _engines = {}
 usage = {"seconds": 0.0, "characters": 0}  # what translation has cost in this process
@@ -65,6 +66,12 @@ def available(source, target="en"):
     return _engine(source, target)[1] is not None
 
 
+def looping(text):
+    """True when the same few letters come six or more times in a row. These models sometimes get stuck
+    that way ("wheel wheel wheel ..."): 5% of the first Chinese test passages were damaged by it."""
+    return any(any(ch.isalpha() for ch in match.group(1)) for match in _REPEAT.finditer(text))
+
+
 def _sentences(text, source):
     """Pieces short enough for the model input (512 tokens): sentences, then cut at commas if still long."""
     limit = 120 if source in CJK else 400
@@ -88,17 +95,25 @@ def translate_texts(texts, source, target="en", beams=4):
         for piece in _sentences(text, source):
             pieces.append(piece)
             owner.append(position)
-    order = sorted(range(len(pieces)), key=lambda i: len(pieces[i]))  # similar lengths share a batch
     translated = [""] * len(pieces)
-    for start in range(0, len(order), 64):
-        chunk = order[start:start + 64]
-        batch = tokenizer([pieces[i] for i in chunk], return_tensors="pt", padding=True, truncation=True,
-                          max_length=512).to(device)
-        with torch.no_grad():
-            # Output capped at twice the input length: stops the runaway repetition these models sometimes produce.
-            output = model.generate(**batch, num_beams=beams, max_length=2 * batch["input_ids"].shape[1] + 10)
-        for i, text in zip(chunk, tokenizer.batch_decode(output, skip_special_tokens=True)):
-            translated[i] = text
+
+    def run(todo, **options):
+        todo = sorted(todo, key=lambda i: len(pieces[i]))  # similar lengths share a batch
+        for start in range(0, len(todo), 64):
+            chunk = todo[start:start + 64]
+            batch = tokenizer([pieces[i] for i in chunk], return_tensors="pt", padding=True, truncation=True,
+                              max_length=512).to(device)
+            with torch.no_grad():
+                # Output capped at twice the input length, so a stuck translation cannot run on for long.
+                output = model.generate(**batch, max_length=2 * batch["input_ids"].shape[1] + 10, **options)
+            for i, text in zip(chunk, tokenizer.batch_decode(output, skip_special_tokens=True)):
+                translated[i] = text
+
+    run(range(len(pieces)), num_beams=beams)
+    # Second try for the ones that got stuck, with repeated three word sequences forbidden.
+    stuck = [i for i, text in enumerate(translated) if looping(text) and not looping(pieces[i])]
+    if stuck:
+        run(stuck, num_beams=4, no_repeat_ngram_size=3)
     joined = [[] for _ in texts]
     for position, text in zip(owner, translated):
         joined[position].append(text)

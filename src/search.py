@@ -15,7 +15,9 @@ from . import db, embed, translate
 
 KINDS = ("abstract", "claim", "description")
 MODES = ("hybrid", "semantic", "keyword")
-CROSS_LINGUAL = ("translate_query", "shared")
+CROSS_LINGUAL = ("translate_query", "uncalibrated", "shared")
+BACKGROUND = 2000  # passages sampled per language to learn that language's score level for a query
+MIN_BACKGROUND = 200  # fewer than this and the estimate is not trusted
 QUERY_BEAMS = 1  # greedy decoding for queries: measured about 3 to 5 times faster than beam width 4
 RRF_K = 60  # the usual constant: it flattens the difference between neighbouring ranks
 AUTO_THRESHOLD = 0.15  # share of rows kept below which filter first wins; measured, see benchmarks.md
@@ -51,6 +53,30 @@ class Index:
         for patent_id, language in by_patent:
             code[patent_id] = self.languages.index(language) + 1 if language in self.languages else 0
         self.patent_language, self.vector_language = code, code[self.vector_patent]
+        # A fixed random sample of vectors per language. Scoring it tells how high unrelated passages
+        # score in that language for a given query, which differs from language to language.
+        rng = np.random.default_rng(0)
+        self.background = []
+        for language_code in range(len(self.languages) + 1):
+            rows = np.flatnonzero(self.vector_language == language_code)
+            self.background.append(self.vectors[rng.choice(rows, min(len(rows), BACKGROUND), replace=False)])
+
+    def calibration(self, query_vectors):
+        """(mean, spread) of background scores for each language's version of the query.
+        Measured: unrelated Chinese passages score about 0.85 against a Chinese query where unrelated
+        English ones score about 0.79 against the English query. Merged raw, Chinese patents win on that
+        offset alone. Scores are compared as "spreads above the language's own background" instead."""
+        mean, spread = np.zeros(len(query_vectors)), np.ones(len(query_vectors))
+        for code, sample in enumerate(self.background):
+            if len(sample) >= MIN_BACKGROUND:
+                scores = sample @ query_vectors[code]
+                mean[code], spread[code] = scores.mean(), max(scores.std(), 1e-6)
+        for code, sample in enumerate(self.background):
+            if len(sample) < MIN_BACKGROUND:
+                # shortcut: too few passages in this language to estimate from, so English's level is used;
+                # with real data, fit the level once on a larger sample of that language.
+                mean[code], spread[code] = mean[0], spread[0]
+        return mean, spread
 
 
 def _terms(text):
@@ -111,13 +137,15 @@ def _score(vectors, query, version):
     return (vectors @ query.T)[np.arange(len(vectors)), version]  # each row against the query in its own language
 
 
-def rank_patents(vectors, vector_patent, query_vector, keep=None, strategy="auto", version=None):
+def rank_patents(vectors, vector_patent, query_vector, keep=None, strategy="auto", version=None, calibration=None):
     """Best passage per patent, best patent first.
 
     `keep` is a boolean mask over vector rows (None means every row). Rows of one patent
     must be adjacent in `vector_patent` (Index guarantees it).
     `query_vector` is one vector, or one vector per language with `version` saying which
-    one each row is scored against.
+    one each row is scored against. `calibration` is (mean, spread) per language: patents are
+    then ordered by (score - mean) / spread, so no language wins on its score level alone.
+    The scores returned are always the plain similarities.
     - filter_first copies out the kept rows and scores only those.
     - filter_after scores every row and discards afterwards. The baseline.
     - auto picks filter_first when the filter keeps under AUTO_THRESHOLD of the rows:
@@ -142,7 +170,11 @@ def rank_patents(vectors, vector_patent, query_vector, keep=None, strategy="auto
     at_best = np.flatnonzero(scores == np.repeat(best, sizes))  # rows that hold their patent's best score
     group = np.searchsorted(starts, at_best, side="right") - 1
     best_row = at_best[np.r_[True, group[1:] != group[:-1]]]  # the first such row of each patent
-    order = np.argsort(-best, kind="stable")  # ties keep patent order, so every strategy agrees
+    key = best
+    if calibration is not None:
+        language = (version if rows is None else version[rows])[starts]  # a patent has one language
+        key = (best - calibration[0][language]) / calibration[1][language]
+    order = np.argsort(-key, kind="stable")  # ties keep patent order, so every strategy agrees
     best_row = best_row[order]
     return owners[best_row], best_row if rows is None else rows[best_row], best[order]
 
@@ -205,8 +237,11 @@ def search(query=None, doc_number=None, claim_number=None, top_k=10, cpc_prefix=
     Give a `query` in any language, or a `doc_number` (optionally with `claim_number`) to
     find patents like one already indexed, or only filters to list what matches them.
     `cross_lingual`: "translate_query" (default) scores each passage against the query
-    translated into that passage's language. "shared" uses one query vector for every
-    language and relies on the multilingual model alone; measured, that fails (eval_results.md).
+    translated into that passage's language, and puts each language's scores on one scale
+    before merging. "uncalibrated" does the same without the common scale; measured, Chinese
+    patents then crowd out English ones. "shared" uses one query vector for every language
+    and relies on the multilingual model alone; measured, foreign patents are then never
+    found. Both are kept so the comparison can be re-run (eval_results.md).
     `query_lang` overrides the detected language of `query`.
     `info`, when a dict is passed, is filled with timings and counts.
     """
@@ -260,8 +295,8 @@ def search(query=None, doc_number=None, claim_number=None, top_k=10, cpc_prefix=
     lap("filter")
 
     # 3. the query, in English and in each other language that survived the filters
-    query_vector, version, texts = None, None, [text]
-    if text and cross_lingual == "translate_query":
+    query_vector, version, calibration, texts = None, None, None, [text]
+    if text and cross_lingual != "shared":
         codes = set(np.unique(index.patent_language if allowed is None else index.patent_language[allowed]).tolist())
         present = [lang for code, lang in enumerate(index.languages, 1) if code in codes and mode != "keyword"]
         versions = query_versions(index, text, source, present)
@@ -277,6 +312,8 @@ def search(query=None, doc_number=None, claim_number=None, top_k=10, cpc_prefix=
             query_vector = encoded[0]  # one language in play: the plain single vector search
         else:
             query_vector, version = encoded[[unique.index(t) for t in texts]], index.vector_language
+            if cross_lingual == "translate_query":
+                calibration = index.calibration(query_vector)
     lap("encode_query")
 
     # 4. semantic ranking over the surviving passages
@@ -287,7 +324,8 @@ def search(query=None, doc_number=None, claim_number=None, top_k=10, cpc_prefix=
             kinds = np.isin(index.vector_kind, [KINDS.index(kind) for kind in passage_types])
             keep = kinds if keep is None else keep & kinds
         info["vectors_kept"] = len(index.vectors) if keep is None else int(keep.sum())
-        patents, rows, scores = rank_patents(index.vectors, index.vector_patent, query_vector, keep, strategy, version)
+        patents, rows, scores = rank_patents(index.vectors, index.vector_patent, query_vector, keep, strategy, version,
+                                             calibration)
         semantic = patents.tolist()
         best_row, similarity = dict(zip(semantic, rows.tolist())), dict(zip(semantic, scores.tolist()))
     lap("score")

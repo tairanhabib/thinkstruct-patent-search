@@ -2,7 +2,7 @@ import re
 
 from src.embed import windows
 from src.ingest import normalize, parse_claims
-from src.translate import _sentences, detect_language
+from src.translate import _sentences, detect_language, looping
 
 
 def numbers(claims):
@@ -90,3 +90,10 @@ def test_east_asian_languages_are_told_apart_by_script():
     assert detect_language("トレッド部と一対のサイドウォール部とを備える空気入りタイヤ。") == "ja"
     assert detect_language("트레드부와 한 쌍의 사이드월부를 포함하는 공기입 타이어.") == "ko"
     assert detect_language("轮胎") is None  # two characters are still too few
+
+
+def test_a_translation_stuck_in_a_loop_is_recognised():
+    assert looping("Outer axis bearings; " + "wheel " * 12) and looping("轮式" * 10) and looping("to the centre " * 7)
+    assert not looping("The tire has a tread portion and two sidewall portions joined by a carcass ply.")
+    assert not looping("a first belt ply, a second belt ply, a third belt ply and a fourth belt ply")
+    assert not looping("the term      . . . . . . is defined")  # runs of spaces and dots are not a stuck translation

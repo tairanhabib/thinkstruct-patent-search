@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from conftest import COMPLETE, OTHER, without
+from src import search as search_module
 from src import translate
 from src.search import Index, query_language, rank_patents, search
 
@@ -235,3 +236,39 @@ def test_the_evaluation_script_can_run_every_method(build_index):
         ranks = evaluation.reciprocal_ranks(index, ["tread with circumferential grooves and sipes that drain water"],
                                             ["D-OTHER"], ["D-COMPLETE", "D-OTHER"], mode, method)
         assert ranks.tolist() == [1.0], (mode, method)
+
+
+def test_calibration_stops_one_language_winning_on_its_score_level():
+    # Two languages. Language 1 scores 0.3 higher across the board, relevant or not.
+    query = np.array([[1.0, 0.0], [1.0, 0.0]], np.float32)
+    vectors = np.array([[0.50, 0], [0.90, 0],     # patent 1, language 0: its best passage is clearly relevant
+                        [0.52, 0], [0.48, 0],     # patent 2, language 0: background, slightly above its language's level
+                        [0.80, 0], [0.81, 0],     # patent 3, language 1: background, barely above its language's level
+                        [0.78, 0], [1.25, 0]],    # patent 4, language 1: clearly relevant
+                       np.float32)
+    owner = np.array([1, 1, 2, 2, 3, 3, 4, 4])
+    version = np.array([0, 0, 0, 0, 1, 1, 1, 1])
+    levels = (np.array([0.5, 0.8]), np.array([0.1, 0.1]))  # mean and spread of each language's background
+    raw = rank_patents(vectors, owner, query, version=version)
+    assert raw[0].tolist() == [4, 1, 3, 2]  # the unrelated patent 3 beats patent 2 on its language's level alone
+    calibrated = rank_patents(vectors, owner, query, version=version, calibration=levels)
+    assert calibrated[0].tolist() == [4, 1, 2, 3]
+    assert np.allclose(calibrated[2], [1.25, 0.90, 0.52, 0.81])  # what is returned is still the plain similarity
+    keep = np.array([True, True, True, True, True, True, False, False])  # a filter that removes patent 4
+    for strategy in ("filter_first", "filter_after"):
+        assert rank_patents(vectors, owner, query, keep, strategy, version, levels)[0].tolist() == [1, 2, 3]
+
+
+def test_search_calibrates_only_when_it_has_enough_passages_to_estimate_from(build_index, monkeypatch):
+    monkeypatch.setattr(translate, "translate_texts", dictionary_translator)
+    index, _ = build_index([GERMAN, ENGLISH_HUB, OTHER])
+    query_vectors = np.stack([index.vectors[0], index.vectors[-1]])
+    mean, spread = index.calibration(query_vectors)
+    assert mean.tolist() == [0.0, 0.0] and spread.tolist() == [1.0, 1.0]  # tiny index: left alone
+    monkeypatch.setattr(search_module, "MIN_BACKGROUND", 1)
+    mean, spread = index.calibration(query_vectors)
+    assert 0 < mean[0] < 1 and 0 < mean[1] < 1 and mean[0] != mean[1] and (spread > 0).all()
+    calibrated = search("wheel hub pressure sensor", mode="semantic", index=index)
+    uncalibrated = search("wheel hub pressure sensor", mode="semantic", cross_lingual="uncalibrated", index=index)
+    assert {r["doc_number"]: r["similarity"] for r in calibrated} == pytest.approx(
+        {r["doc_number"]: r["similarity"] for r in uncalibrated})  # same similarities, only the order may differ

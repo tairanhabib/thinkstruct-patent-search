@@ -191,7 +191,8 @@ def main():
     filters.add_argument("--strategy", choices=("auto", "filter_first", "filter_after"), default="auto",
                          help="auto filters first when the filter is selective, see benchmarks.md")
     filters.add_argument("--cross-lingual", choices=engine.CROSS_LINGUAL, default="translate_query",
-                         help="translate_query: search each language with the query in that language (default). "
+                         help="translate_query: search each language with the query in that language, scores put on "
+                              "one scale (default). uncalibrated: the same without the common scale. "
                               "shared: one query vector for all languages")
     filters.add_argument("--query-language", help="language of the query when detection gets it wrong, for example de")
     filters.add_argument("--top", type=int, default=10)
