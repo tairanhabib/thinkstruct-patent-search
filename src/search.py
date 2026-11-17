@@ -274,6 +274,8 @@ def search(query=None, doc_number=None, claim_number=None, top_k=10, cpc_prefix=
         raise ValueError(f"mode must be one of {MODES}")
     if cross_lingual not in CROSS_LINGUAL:
         raise ValueError(f"cross_lingual must be one of {CROSS_LINGUAL}")
+    if query and not any(ch.isalnum() for ch in query):
+        raise ValueError("the query has no letters or digits")  # it used to return a ranked list for "?!" or "   "
     if passage_types and (mode == "keyword" or not (query or doc_number)):
         # keyword search reads title and abstract only, so it cannot honour a passage type
         raise ValueError("passage types need a semantic or hybrid search with a query or a document number")

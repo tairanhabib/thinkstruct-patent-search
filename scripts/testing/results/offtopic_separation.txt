@@ -1,0 +1,33 @@
+category   id   best   above background   background mean, spread   query
+vague      V05  0.866   2.94 spreads        0.799, 0.0229            wheel thing that saves fuel
+general    G02  0.869   3.00 spreads        0.803, 0.0220            a tire that can keep driving for a while after it gets a nai
+misspelled M01  0.878   3.22 spreads        0.807, 0.0220            tyre presure senser inside the weel
+general    G06  0.885   3.40 spreads        0.794, 0.0269            tire that makes less humming noise inside the car on the hig
+general    G10  0.868   3.43 spreads        0.786, 0.0239            tire rubber that grips well in the cold but does not wear ou
+specific   S01  0.913   3.48 spreads        0.811, 0.0293            pneumatic tire with a tread having four circumferential main
+general    G04  0.877   3.65 spreads        0.803, 0.0201            some way to stop small stones getting stuck in the grooves o
+misspelled M02  0.880   3.65 spreads        0.792, 0.0240            runflat tire with reinforsed sidewal
+general    G01  0.890   3.67 spreads        0.811, 0.0213            I want a wheel that tells the driver when one of the lug nut
+specific   S02  0.886   3.86 spreads        0.797, 0.0232            wheel bearing unit with a double row angular contact ball be
+specific   S05  0.866   3.89 spreads        0.785, 0.0209            carbon fibre bicycle rim with a hookless bead seat and a tub
+misspelled M04  0.865   4.01 spreads        0.786, 0.0196            alumnium aloy wheel rim with spoaks
+no_match   N01  0.841   4.04 spreads        0.781, 0.0148            turbofan aircraft engine with a geared fan and a variable by
+vague      V01  0.873   4.06 spreads        0.788, 0.0209            better wheels
+general    G03  0.862   4.09 spreads        0.781, 0.0199            bike rim that is lighter but does not crack when you hit a p
+no_match   N02  0.826   4.11 spreads        0.754, 0.0175            sourdough bread recipe with a long cold fermentation
+general    G05  0.875   4.13 spreads        0.781, 0.0227            wheel for a shopping cart that locks itself when the cart le
+vague      V03  0.880   4.15 spreads        0.801, 0.0191            make the car ride smoother
+general    G07  0.887   4.41 spreads        0.790, 0.0221            a spare wheel that takes less room in the trunk
+vague      V04  0.839   4.66 spreads        0.766, 0.0155            safer trailers
+misspelled M03  0.858   4.67 spreads        0.775, 0.0177            trailor hich with automatic loking
+specific   S03  0.920   4.67 spreads        0.806, 0.0245            non-pneumatic tire with polyurethane spokes connecting an in
+vague      V02  0.912   4.74 spreads        0.792, 0.0254            something for tires in winter
+general    G08  0.888   4.78 spreads        0.792, 0.0201            putting a small generator in the tire so the pressure sensor
+no_match   N04  0.848   5.09 spreads        0.774, 0.0145            method for treating migraine with a monoclonal antibody
+no_match   N05  0.837   5.15 spreads        0.756, 0.0157            blockchain consensus protocol for cross-border payments
+no_match   N03  0.835   5.21 spreads        0.767, 0.0131            smartphone camera lens with optical image stabilisation
+specific   S04  0.924   5.36 spreads        0.802, 0.0226            rubber composition for a tread comprising 100 parts of styre
+misspelled M05  0.914   5.83 spreads        0.788, 0.0215            studed winter tire for beter ice grip
+general    G09  0.881   6.18 spreads        0.770, 0.0179            a hitch that lets one person hook up a trailer without getti
+similarity of the best result: off-topic 0.826 to 0.848, the other 25 0.839 to 0.924. Real queries at or below the highest off-topic one: 1 of 25. Off-topic queries at or above the lowest real one: 2 of 5.
+spreads above the background sample: off-topic 4.044 to 5.210, the other 25 2.944 to 6.177. Real queries at or below the highest off-topic one: 22 of 25. Off-topic queries at or above the lowest real one: 5 of 5.
