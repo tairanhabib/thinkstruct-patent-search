@@ -303,7 +303,7 @@ def main():
                         else passage["text"])
                 pieces += embed.windows(text, window)
         too_long = sum(len(ids) > embed.MAX_TOKENS
-                       for ids in tokenizer(["passage: " + p for p in pieces], truncation=False)["input_ids"])
+                       for ids in tokenizer(["passage: " + p for p in pieces], truncation=False, verbose=False)["input_ids"])
         stuck = sum(translate.looping(passage["text"]) for passage in rows)
         out.append(f"| {NAMES[language]} | {len(docs)} | {detected} | {len(pieces)} | {too_long} | {stuck} of {len(rows)} |")
     with open(args.out, "w", encoding="utf-8") as handle:

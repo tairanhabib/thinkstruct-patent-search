@@ -51,6 +51,8 @@ def _engine(source, target):
         try:
             import torch
             from transformers import MarianMTModel, MarianTokenizer
+            from transformers.utils import logging as transformers_logging
+            transformers_logging.disable_progress_bar()  # the "Loading weights" bars; download progress still shows
             device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
             _engines[name] = (MarianTokenizer.from_pretrained(name),
                               MarianMTModel.from_pretrained(name).eval().to(device), device)

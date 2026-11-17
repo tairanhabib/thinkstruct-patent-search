@@ -44,6 +44,8 @@ def model():
     global _model
     if _model is None:
         from sentence_transformers import SentenceTransformer  # slow import, only when needed
+        from transformers.utils import logging as transformers_logging
+        transformers_logging.disable_progress_bar()  # the "Loading weights" bars; download progress still shows
         _model = SentenceTransformer(MODEL_NAME)
     return _model
 
@@ -60,7 +62,8 @@ def count_truncated(texts, prefix):
     tokenizer = model().tokenizer
     total = 0
     for start in range(0, len(texts), 2000):
-        batch = tokenizer([prefix + text for text in texts[start:start + 2000]], truncation=False)["input_ids"]
+        # verbose=False: over-long texts are exactly what is being counted here, so no warning about them
+        batch = tokenizer([prefix + text for text in texts[start:start + 2000]], truncation=False, verbose=False)["input_ids"]
         total += sum(len(ids) > MAX_TOKENS for ids in batch)
     return total
 
