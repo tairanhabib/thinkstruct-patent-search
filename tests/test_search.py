@@ -97,7 +97,7 @@ def test_hybrid_fusion_rewards_agreement_between_keyword_and_semantic(build_inde
     index, _ = build_index([COMPLETE, OTHER])
     results = search("tire pressure sensor", mode="hybrid", index=index)
     assert docs(results)[0] == "D-COMPLETE" and results[0]["keyword_rank"] == 1
-    assert results[0]["score"] == pytest.approx(2 / 61)  # first in both rankings
+    assert results[0]["score"] == pytest.approx((1 + search_module.KEYWORD_WEIGHT) / 61)  # first in both rankings
 
 
 def test_filters_only_lists_matches_and_a_bare_call_is_refused(build_index):
@@ -183,7 +183,8 @@ def test_foreign_query_is_searched_in_english_too(build_index, monkeypatch):
                         lambda texts, source, target="en", beams=4: ["tire tread circumferential grooves" for _ in texts])
     index, _ = build_index([COMPLETE, OTHER])
     info = {}
-    results = search("Reifen mit Umfangsrillen im Laufstreifen und Lamellen in jeder Rippe", query_lang="de", index=index, info=info)
+    results = search("Reifen mit Umfangsrillen im Laufstreifen und Lamellen in jeder Rippe", query_lang="de", mode="hybrid",
+                     index=index, info=info)  # hybrid, so the keyword rank shows the English translation was used
     assert docs(results)[0] == "D-OTHER" and results[0]["keyword_rank"] == 1 and info["query_languages"] == ["de", "en"]
 
 
@@ -290,3 +291,13 @@ def test_search_calibrates_only_when_it_has_enough_passages_to_estimate_from(bui
     uncalibrated = search("wheel hub pressure sensor", mode="semantic", cross_lingual="uncalibrated", index=index)
     assert {r["doc_number"]: r["similarity"] for r in calibrated} == pytest.approx(
         {r["doc_number"]: r["similarity"] for r in uncalibrated})  # same similarities, only the order may differ
+
+
+def test_a_patent_with_nothing_to_embed_is_found_by_its_words_not_by_the_default_search(build_index):
+    """Semantic search (the default) ranks passages, and a patent with only a title has none. It stays reachable
+    through keyword and hybrid search and through the filters. The real data has no such patent."""
+    index, _ = build_index([COMPLETE, OTHER, {"title": "Zirconium bracket", "doc_number": "D-TITLE-ONLY"}])
+    assert "D-TITLE-ONLY" not in docs(search("zirconium bracket", index=index))
+    assert docs(search("zirconium bracket", mode="keyword", index=index)) == ["D-TITLE-ONLY"]
+    assert docs(search("zirconium bracket", mode="hybrid", index=index))[-1] == "D-TITLE-ONLY"  # after every scored patent
+    assert docs(search(title="zirconium", index=index)) == ["D-TITLE-ONLY"]

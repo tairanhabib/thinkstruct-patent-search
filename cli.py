@@ -187,7 +187,9 @@ def main():
     filters.add_argument("--types", help="passage types to search, comma separated: claim,abstract,description")
     filters.add_argument("--include-unknown", action="store_true",
                          help="let patents through a filter when the filtered field is missing")
-    filters.add_argument("--mode", choices=engine.MODES, default="hybrid")
+    filters.add_argument("--mode", choices=engine.MODES, default="semantic",
+                         help="semantic: best passage by meaning (default). keyword: words in title and abstract. "
+                              "hybrid: semantic, with the keyword ranking settling near-ties")
     filters.add_argument("--strategy", choices=("auto", "filter_first", "filter_after"), default="auto",
                          help="auto filters first when the filter is selective, see benchmarks.md")
     filters.add_argument("--cross-lingual", choices=engine.CROSS_LINGUAL, default="translate_query",

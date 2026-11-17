@@ -38,10 +38,10 @@ METHODS = (
     ("keyword", "shared", "keyword only"),
     ("semantic", "shared", "semantic, shared space"),
     ("semantic", "uncalibrated", "semantic, query translated, raw scores"),
-    ("semantic", "translate_query", "semantic, query translated, calibrated"),
+    ("semantic", "translate_query", "semantic, query translated, calibrated (default)"),
     ("hybrid", "shared", "hybrid, shared space"),
     ("hybrid", "uncalibrated", "hybrid, query translated, raw scores"),
-    ("hybrid", "translate_query", "hybrid, query translated, calibrated (default)"),
+    ("hybrid", "translate_query", "hybrid, query translated, calibrated"),
 )
 ONE_LANGUAGE = [m for m in METHODS if m[1] != "uncalibrated"]  # with one language in play, calibration changes nothing
 

@@ -1,5 +1,6 @@
-"""Search: filter patents in SQL first, score only the passages that survive, then fuse
-the keyword ranking and the semantic ranking with reciprocal rank fusion.
+"""Search: filter patents in SQL first, then score only the passages that survive (semantic,
+the default). `mode="hybrid"` also fuses in a keyword ranking of title and abstract;
+`mode="keyword"` uses that ranking alone.
 
     from src.search import Index, search
     index = Index()
@@ -20,6 +21,11 @@ BACKGROUND = 2000  # passages sampled per language to learn that language's scor
 MIN_BACKGROUND = 200  # fewer than this and the estimate is not trusted
 QUERY_BEAMS = 1  # greedy decoding for queries: measured about 3 to 5 times faster than beam width 4
 RRF_K = 60  # the usual constant: it flattens the difference between neighbouring ranks
+# Vote of the keyword list in the hybrid fusion, against 1 for the semantic list. Measured on four
+# known-answer tests (scripts/tune_keyword_weight.py): the smaller, the better, and below 0.02 the
+# keyword list no longer changed a result. At 0.02 it settles near-ties between neighbours in the
+# semantic list. No weight made hybrid as good as the better single mode, so semantic is the default.
+KEYWORD_WEIGHT = 0.02
 AUTO_THRESHOLD = 0.15  # share of rows kept below which filter first wins; measured, see benchmarks.md
 STOPWORDS = set(
     "a an and are as at be been being by for from has have having in into is it its of on or said such that the "
@@ -245,13 +251,16 @@ def query_versions(index, text, source, languages):
 
 
 def search(query=None, doc_number=None, claim_number=None, top_k=10, cpc_prefix=None, keywords=None, title=None,
-           date_from=None, date_to=None, language=None, passage_types=None, include_unknown=False, mode="hybrid",
+           date_from=None, date_to=None, language=None, passage_types=None, include_unknown=False, mode="semantic",
            strategy="auto", restrict_docs=None, translate_results=True, cross_lingual="translate_query",
            query_lang=None, index=None, info=None):
     """Ranked patents, each with its best matching passage as evidence.
 
     Give a `query` in any language, or a `doc_number` (optionally with `claim_number`) to
     find patents like one already indexed, or only filters to list what matches them.
+    `mode`: "semantic" (default) ranks by the best passage. "hybrid" fuses that with a keyword
+    ranking of title and abstract, weighted by KEYWORD_WEIGHT. "keyword" is that ranking alone,
+    and the only one that can return a patent with no passage long enough to embed.
     `cross_lingual`: "translate_query" (default) scores each passage against the query
     translated into that passage's language, and puts each language's scores on one scale
     before merging. "uncalibrated" does the same without the common scale; measured, Chinese
@@ -354,11 +363,11 @@ def search(query=None, doc_number=None, claim_number=None, top_k=10, cpc_prefix=
             keyword = [p for p in keyword if p in best_row]  # evidence must be of a requested type
     lap("keyword")
 
-    # 6. reciprocal rank fusion
+    # 6. reciprocal rank fusion, the keyword list weighted
     fused = {}
-    for ranking in (semantic, keyword):
+    for ranking, weight in ((semantic, 1.0), (keyword, KEYWORD_WEIGHT)):
         for rank, patent_id in enumerate(ranking, 1):
-            fused[patent_id] = fused.get(patent_id, 0.0) + 1.0 / (RRF_K + rank)
+            fused[patent_id] = fused.get(patent_id, 0.0) + weight / (RRF_K + rank)
     if fused:
         ranked = sorted(fused, key=fused.get, reverse=True)[:top_k]
     elif query or doc_number:

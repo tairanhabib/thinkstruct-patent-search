@@ -26,6 +26,7 @@ import numpy as np
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
 from src import embed  # noqa: E402
+from src import search as engine  # noqa: E402
 from src.search import KINDS, RRF_K, Index, keyword_rank, rank_patents, search  # noqa: E402
 
 SEED, SAMPLE, RESAMPLES = 42, 200, 1000
@@ -72,11 +73,12 @@ def position(ranked, target):
 
 
 def fuse(semantic, keyword):
-    """Reciprocal rank fusion exactly as src/search.py does it (semantic list first, then keyword)."""
+    """Reciprocal rank fusion exactly as src/search.py does it (semantic list first, then keyword).
+    Changed by the builder with the M1 fix: the keyword list now carries the weight src/search.py gives it."""
     fused = {}
-    for ranking in (semantic, keyword):
+    for ranking, weight in ((semantic, 1.0), (keyword, engine.KEYWORD_WEIGHT)):
         for rank, patent_id in enumerate(ranking, 1):
-            fused[patent_id] = fused.get(patent_id, 0.0) + 1.0 / (RRF_K + rank)
+            fused[patent_id] = fused.get(patent_id, 0.0) + weight / (RRF_K + rank)
     return sorted(fused, key=fused.get, reverse=True)
 
 

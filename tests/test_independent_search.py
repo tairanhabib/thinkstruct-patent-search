@@ -90,10 +90,13 @@ def test_hybrid_brings_in_what_only_keywords_and_what_only_meaning_found(build_i
     keyword = docs(search(query, mode="keyword", top_k=1, index=index))
     semantic = docs(search(query, mode="semantic", top_k=1, index=index))
     assert keyword == ["D-KEYWORD"] and semantic == ["D-SEMANTIC"]  # the two lists clearly differ at the top
-    # Rank 1 in one list only is worth 1/61. D-COMPLETE is second in BOTH lists (2/62), so it leads the fused list:
-    # that is how reciprocal rank fusion works, and it is why the top 3 is checked here, not the top 2.
-    fused = docs(search(query, mode="hybrid", top_k=3, index=index))
-    assert {"D-KEYWORD", "D-SEMANTIC"} <= set(fused)
+    # Changed by the builder with the M1 fix. This test asked for both in the fused top 3, which held while the
+    # keyword list had the same vote as the semantic list. That equal vote is what M1 measured as harmful, and the
+    # keyword list now counts 0.02. D-KEYWORD has no passage long enough to embed, so it is in the keyword list
+    # only: hybrid still returns it (semantic search cannot), but after every patent the semantic list ranked.
+    fused = docs(search(query, mode="hybrid", top_k=5, index=index))
+    assert fused[0] == "D-SEMANTIC" and fused[-1] == "D-KEYWORD" and len(fused) == 5
+    assert "D-KEYWORD" not in docs(search(query, mode="semantic", top_k=5, index=index))
 
 
 def test_results_are_sorted_unique_and_repeatable(build_index):

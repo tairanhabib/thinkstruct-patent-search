@@ -1,20 +1,25 @@
 """Time the search with and without hybrid search and filters. Writes benchmarks.md.
 
-Usage: python scripts/benchmark.py [--index index] [--repeat 5] [--scale 30]
+Usage: python scripts/benchmark.py [--index index] [--repeat 5] [--scale 30] [--times 10]
 
 Part 1 runs the real `search()` on the real index: 20 fixed queries, each repeated.
 Part 2 repeats the scoring step alone on the same vectors copied `--scale` times, to see
 what happens to filter first and filter after as the corpus grows.
+Part 3 runs the real `search()` again on a real index `--times` times the size, built in a
+temporary directory, so the SQL filter, the keyword ranking and the fetch grow too.
 """
 import argparse
 import os
 import sys
+import tempfile
 import time
 
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src import embed  # noqa: E402
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "testing"))
+import perf  # noqa: E402  (the tester's script: `scale` writes a real index several times the size)
+from src import db, embed  # noqa: E402
 from src.search import Index, filter_patents, rank_patents, search  # noqa: E402
 
 QUERIES = [
@@ -73,33 +78,34 @@ def time_search(index, repeat, **options):
     return median_p95(total), median_p95(without_encoding), {k: float(np.median(v)) for k, v in stages.items()}, dict(info)
 
 
-def part_one(index, repeat, out):
-    out.append("## Part 1: the real search on the real index\n")
+def part_one(index, repeat, out, heading="## Part 1: the real search on the real index\n"):
+    out.append(heading)
     out.append(f"{len(index.patent_ids)} patents, {len(index.vectors)} vectors of {index.vectors.shape[1]} dimensions. "
                f"{len(QUERIES)} queries, each run {repeat} times ({len(QUERIES) * repeat} timings per row). "
                "Times in milliseconds, median / 95th percentile. Result translation is switched off.\n")
 
-    out.append("### With and without hybrid search, no filters\n")
+    out.append("### The three search modes, no filters\n")
     out.append("| Mode | Whole call | Without encoding the query | Encode query | Score vectors | Keyword ranking | Fuse and fetch |")
     out.append("| --- | --- | --- | --- | --- | --- | --- |")
-    for label, mode in (("semantic only (hybrid off)", "semantic"), ("keyword only", "keyword"), ("hybrid (keyword + semantic)", "hybrid")):
+    for label, mode in (("semantic (default)", "semantic"), ("keyword only", "keyword"), ("hybrid (semantic and keyword fused)", "hybrid")):
         total, rest, stage, _ = time_search(index, repeat, mode=mode)
         out.append(f"| {label} | {total[0]:.1f} / {total[1]:.1f} | {rest[0]:.2f} / {rest[1]:.2f} | {stage['encode_query']:.1f} "
                    f"| {stage['score']:.2f} | {stage['keyword']:.2f} | {stage['fuse'] + stage['fetch']:.2f} |")
 
-    out.append("\n### Hybrid search with filters: filter first, filter after, and auto\n")
+    out.append("\n### Search with filters (default mode): filter first, filter after, and auto\n")
     out.append("All three strategies return the same results (checked for every row). \"Vectors kept\" is the share of all "
-               "vectors that belong to patents passing the filter. The three strategy columns are the median time of the "
-               "filter and scoring steps together. The last column is the whole call with the default strategy (auto), "
+               "vectors that belong to patents passing the filter. \"SQL filter\" is the median time of the filter query alone. "
+               "The three strategy columns are the median time of the filter and scoring steps together, so they include it. "
+               "The last column is the whole call with the default strategy (auto), "
                "without encoding the query, median / 95th percentile.\n")
-    out.append("| Filter | Patents passing | Vectors kept | Filter first | Filter after | Auto (default) | "
+    out.append("| Filter | Patents passing | Vectors kept | SQL filter | Filter first | Filter after | Auto (default) | "
                "First against after | Whole call, auto |")
-    out.append("| --- | --- | --- | --- | --- | --- | --- | --- |")
-    _, base_rest, base_stage, _ = time_search(index, repeat, mode="hybrid")
+    out.append("| --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+    _, base_rest, base_stage, _ = time_search(index, repeat)
     base = base_stage["filter"] + base_stage["score"]
-    out.append(f"| none | {len(index.patent_ids)} | 100% | {base:.2f} | same | same | | {base_rest[0]:.2f} / {base_rest[1]:.2f} |")
+    out.append(f"| none | {len(index.patent_ids)} | 100% | none | {base:.2f} | same | same | | {base_rest[0]:.2f} / {base_rest[1]:.2f} |")
     for label, filters in FILTERS:
-        runs = {name: time_search(index, repeat, mode="hybrid", strategy=name, **filters)
+        runs = {name: time_search(index, repeat, strategy=name, **filters)
                 for name in ("filter_first", "filter_after", "auto")}
         for query in QUERIES[:5]:
             answers = [[(r["doc_number"], r["passage"] and r["passage"]["text"]) for r in
@@ -108,7 +114,7 @@ def part_one(index, repeat, out):
         core = {name: run[2]["filter"] + run[2]["score"] for name, run in runs.items()}
         info = runs["auto"][3]
         out.append(f"| {label} | {info['patents_passing_filters']} | {info.get('vectors_kept', 0) / len(index.vectors):.1%} "
-                   f"| {core['filter_first']:.2f} | {core['filter_after']:.2f} | {core['auto']:.2f} "
+                   f"| {runs['auto'][2]['filter']:.2f} | {core['filter_first']:.2f} | {core['filter_after']:.2f} | {core['auto']:.2f} "
                    f"| {core['filter_after'] / core['filter_first']:.1f}x | {runs['auto'][1][0]:.2f} / {runs['auto'][1][1]:.2f} |")
     out.append("")
 
@@ -151,11 +157,26 @@ def part_two(index, scale, repeat, out):
     out.append("")
 
 
+def part_three(index_dir, times, repeat, out):
+    """Part 1 again, on a real index `times` times the size. Every patent, passage, classification and full text
+    row is copied (document numbers get a suffix) and the vectors get a little noise, so nothing is an exact tie."""
+    with tempfile.TemporaryDirectory() as directory:
+        perf.scale(argparse.Namespace(index=index_dir, dest=os.path.join(directory, "index"), times=times))
+        big = Index(os.path.join(directory, "index"))
+        for query in QUERIES:
+            search(query, index=big, translate_results=False)  # warm the SQLite page cache
+        part_one(big, repeat, out, f"## Part 3: the real search on a real index {times} times the size\n\n"
+                 "Unlike Part 2 this includes the SQL filter, the keyword ranking and the fetch. "
+                 f"The index is the real one with every row copied {times} times.\n")
+        big.con.close()
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--index")
     parser.add_argument("--repeat", type=int, default=5)
     parser.add_argument("--scale", type=int, default=30, help="copies of the vectors for part 2 (0 to skip)")
+    parser.add_argument("--times", type=int, default=10, help="size of the real index built for part 3 (0 to skip)")
     parser.add_argument("--out", default="benchmarks.md")
     args = parser.parse_args()
 
@@ -170,6 +191,8 @@ def main():
     part_one(index, args.repeat, out)
     if args.scale:
         part_two(index, args.scale, max(1, args.repeat // 2), out)
+    if args.times:
+        part_three(db.index_dir(args.index), args.times, max(1, args.repeat // 2), out)
     with open(args.out, "w", encoding="utf-8") as handle:
         handle.write("\n".join(out))
     print("\n".join(out))

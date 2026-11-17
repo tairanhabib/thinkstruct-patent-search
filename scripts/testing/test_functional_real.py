@@ -21,7 +21,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 from benchmark import FILTERS, QUERIES  # noqa: E402
-from src.search import Index, keyword_rank, search  # noqa: E402
+from src.search import KEYWORD_WEIGHT, Index, keyword_rank, search  # noqa: E402
 
 INDEX_DIR = os.environ.get("PATENT_TEST_INDEX", os.path.join(ROOT, "index"))
 EVERYTHING = 100000
@@ -247,20 +247,21 @@ def test_top_k_is_a_prefix_of_a_longer_list(index):
 
 # --- hybrid ----------------------------------------------------------------------------------------
 
-def test_hybrid_contains_items_from_both_the_keyword_list_and_the_semantic_list(index):
-    """Pick the query whose keyword top 10 and semantic top 10 differ most, then look at the fused top 10."""
-    best = None
+def test_hybrid_is_the_semantic_list_with_keyword_matches_moved_up_a_little(index):
+    """Changed by the builder with the M1 fix. This was `test_hybrid_contains_items_from_both_the_keyword_list_and_the_
+    semantic_list`: for the query whose two top tens differ most, something from each side had to reach the fused top
+    ten. That held while the keyword list had the same vote as the semantic list, which is the behaviour M1 measured as
+    harmful (hybrid 60 points behind semantic on Test B). The keyword list now counts 0.02, enough to reorder
+    neighbours in the semantic list and no more. So the test now checks exactly that: hybrid changes some rankings,
+    and never brings in a patent from far down the semantic list."""
+    changed = 0
     for query in FIFTY:
-        kw = docs(search(query, mode="keyword", top_k=10, translate_results=False, index=index))
-        sem = docs(search(query, mode="semantic", top_k=10, translate_results=False, index=index))
-        if len(kw) == 10 and (best is None or len(set(kw) & set(sem)) < best[0]):
-            best = (len(set(kw) & set(sem)), query, kw, sem)
-    overlap, query, kw, sem = best
-    assert overlap <= 5, "no query separates the two lists clearly"
-    fused = docs(search(query, mode="hybrid", top_k=10, translate_results=False, index=index))
-    only_keyword, only_semantic = set(kw) - set(sem), set(sem) - set(kw)
-    assert set(fused) & only_keyword, f"{query!r}: nothing from the keyword-only side reached the fused top 10"
-    assert set(fused) & only_semantic, f"{query!r}: nothing from the semantic-only side reached the fused top 10"
+        semantic = docs(search(query, mode="semantic", top_k=15, translate_results=False, index=index))
+        fused = docs(search(query, mode="hybrid", top_k=10, translate_results=False, index=index))
+        assert set(fused) <= set(semantic), query  # a keyword match moves up a few places at most
+        changed += fused != semantic[:10]
+    assert changed, "the keyword list changed nothing in 50 queries: hybrid would be semantic under another name"
+    print(f"\nhybrid top 10 differs from semantic top 10 for {changed} of {len(FIFTY)} queries")
 
 
 def test_hybrid_score_is_reciprocal_rank_fusion_of_the_two_lists(index):
@@ -268,9 +269,9 @@ def test_hybrid_score_is_reciprocal_rank_fusion_of_the_two_lists(index):
         kw = docs(search(query, mode="keyword", top_k=EVERYTHING, translate_results=False, index=index))
         sem = docs(search(query, mode="semantic", top_k=EVERYTHING, translate_results=False, index=index))
         expected = {}
-        for ranking in (sem, kw):
+        for ranking, weight in ((sem, 1.0), (kw, KEYWORD_WEIGHT)):  # changed with the M1 fix: the keyword list is weighted
             for rank, doc in enumerate(ranking, 1):
-                expected[doc] = expected.get(doc, 0.0) + 1.0 / (60 + rank)
+                expected[doc] = expected.get(doc, 0.0) + weight / (60 + rank)
         fused = search(query, mode="hybrid", top_k=30, translate_results=False, index=index)
         for r in fused:
             assert abs(r["score"] - expected[r["doc_number"]]) < 1e-12, (query, r["doc_number"])
