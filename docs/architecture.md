@@ -36,7 +36,7 @@ flowchart TD
         q["query text in any language<br/>or document number and claim<br/>or filters only"]
         filt["1. filters in SQL<br/>classification prefix, keywords, title,<br/>dates, language, passage type"]
         tq["2. translate the query<br/>into each language that survived<br/>(short, cached)"]
-        sem["3. score each passage against the query<br/>in its own language<br/>best passage per patent"]
+        sem["3. score each passage against the query<br/>in its own language, on one scale<br/>best passage per patent"]
         kw["4. keyword ranking (BM25)<br/>English title and abstract"]
         rrf["5. reciprocal rank fusion"]
         show["6. show in English<br/>translate displayed passages on demand, cache"]

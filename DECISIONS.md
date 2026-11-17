@@ -18,30 +18,43 @@ document is related. One vector per patent would also blur a 60 paragraph descri
 about 51 vectors per patent instead of 1, which is the main cost driver at 10 million patents (512 million vectors), so
 the scale design embeds abstract and claims first (17 per patent) and descriptions second.
 
-## 2. Translate the query into each language, not the documents, and not nothing
+## 2. Translate the query into each language, and compare scores relative to each language's own level
 
 **Chose:** passages are embedded in their original language. At search time the short query is translated into each
-language in the index, and each passage is scored against the query in its own language.
+language in the index, and each passage is scored against the query in its own language. Before languages are merged,
+every score is expressed as how far it stands above its own language's background for that query.
 
 **Rejected, first:** the plan I started with. One multilingual model, one shared vector space, no translation for
 search at all. I built it and measured it. In a corpus that mixes languages it fails completely: for an English query the
 right German patent had an MRR of 0.007 and the right Chinese one 0.003, against 0.930 for English. Not one of 200
 foreign targets reached the first ten results (with keywords fused in, 19 of 200 did). The model often scores two
 unrelated English passages as more alike than a passage and its own translation: for 27.5% of other English abstracts
-against a patent's German copy, and 76.2% against its Chinese copy. Bigger models reduced this and none removed it (the
+against a patent's German copy, and 76.5% against its Chinese copy. Bigger models reduced this and none removed it (the
 best of three reached 0.310).
 
-**Rejected, second:** translating every document to English and searching in English. It works, but search quality then
+**Rejected, second:** translating the query and merging the raw scores. I shipped this and called it comparable,
+because the test I had (is the right foreign patent found?) said German 0.921 and Chinese 0.931 against 0.945. Then I
+used the tool and saw unrelated Chinese patents at the top of an English search. Each language has its own score level:
+an unrelated Chinese passage scores about 0.85 against a Chinese query, an unrelated English one about 0.79 against the
+English query. Merged raw, adding 100 Chinese patents cut English search from 0.930 to 0.730, and Chinese copies took
+154 of 200 top-ten places on short queries.
+
+**Rejected, third:** translating every document to English and searching in English. It works, but search quality then
 depends on translation quality forever, and the translation bill grows with the corpus: $720,000 at hosted prices for
 10 million patents, against $22,080 for title and abstract.
 
-**Why:** a query is a sentence. A corpus is hundreds of gigabytes. Translating the short side fixed the gap (hybrid MRR 0.921 German,
-0.933 Chinese, 0.945 English) and keeps the documents untouched. The cost is one translation per language for a new query
-(about 1.2 seconds for a full claim, measured on the slow side, then cached) and a new dependency on translating the
-query well.
+**Why:** a query is a sentence. A corpus is hundreds of gigabytes. Translating the short side lets foreign patents be found
+and leaves the documents untouched. Comparing scores relative to each language's level keeps one language from winning
+by default: adding foreign patents now costs English search nothing (0.945 before, 0.945 and 0.950 after). The cost is
+one translation per language for a new query (about 1.2 seconds for a full claim, measured on the slow side, then
+cached), a small extra calculation per query, and a new dependency on translating the query well.
 
-**What I am not sure of:** those numbers come from machine translated test patents, made by the same models that
-translate the query. They are an upper bound until the real foreign sample is tested.
+**Where it stands:** German is 2 to 4 points behind English in every test. Chinese is not there yet: a Chinese patent
+among English ones is ranked first 71% of the time against 90% (MRR 0.801 against 0.945).
+
+**What I am not sure of:** these numbers come from machine translated test patents, made by the same models that
+translate the query, so they flatter the method. And the calibration assumes each language's patents cover the same mix
+of topics, which is true of my test set by construction and may not be true of a real one.
 
 ## 3. Translate three small things, and only those
 
@@ -56,20 +69,23 @@ on German patents, and it was the only thing that worked while the shared space 
 touches only the handful of passages a person actually reads. And translation quality is poor enough that it should not
 be trusted with more: the title "SPOKE" came back as "Speaker", and a rubber recipe in "parts" came back in "hours".
 
-## 4. Measure "comparable" on a mixed corpus, with an interval
+## 4. Measure "comparable" from both sides, on a mixed corpus, with an interval
 
 **Chose:** build the same 100 patents in English, German and Chinese. Search with the first claim in English, remove
-claims from the candidates, and count where the same patent's abstract or description ranks. Do it with the foreign
-patents mixed among 540 other English patents. Report the gap to English with a 95% interval, and also run the test
-backwards (foreign query, English patents).
+claims from the candidates, and count where the same patent's abstract or description ranks. Then ask two different
+questions. Is a foreign patent found among English ones? And does adding foreign patents make English search worse?
+Report gaps with a 95% interval. Also run it backwards (foreign query, English patents), and count which languages short
+queries return.
 
-**Rejected:** testing each language on its own, or reading a few results and calling them good.
+**Rejected:** testing each language on its own, reading a few results and calling them good, and, the mistake I
+actually made, asking only the first of those two questions.
 
-**Why:** a real corpus is mixed, and the mixed test is where the first design fell apart. On its own, German looked
-merely worse (0.409). Mixed, it was invisible (0.007). Looking at a few results would have missed it entirely, because
-every result returned was a plausible English patent. The backwards test matters because it is the only one where the
-documents are original human text (the query is still a machine translation of that patent's own claim), and it is the
-one that shows Chinese still falling short (0.862 against 0.945).
+**Why:** a real corpus is mixed, and each failure only showed up in the test built to catch it. On its own, German
+under the shared space looked merely worse (0.459). Mixed, it was invisible (0.007). Then the raw-score version passed
+the "is it found" test with 0.931 for Chinese and failed the "does it hurt" test badly (English fell from 0.930 to 0.730),
+because any method that scores foreign patents too high passes the first test. A test that can be passed by cheating
+needs a second test that the cheat fails. I found the second problem by using the tool, not by measuring, and that is
+the lesson I would take from this project.
 
 **What it does not measure:** real foreign patents, real relevance (finding the same patent is a stand-in), or more than
 one technical field.
@@ -95,9 +111,9 @@ score everything in place and discard afterwards. The switch is automatic.
 
 **Rejected:** always filtering first (my plan), and always filtering afterwards (the naive way).
 
-**Why:** I measured both. With a filter that keeps 1% of vectors, filtering first was 5 times faster on the real index
-and 20 times faster on the scoring step at a million vectors. With a filter that keeps 53%, filtering first was 2.8
-times *slower*, because it has to copy the surviving rows out before scoring them and a copy costs more than the
+**Why:** I measured both, five times. With a filter that keeps 1% of vectors, filtering first was 3 to 6 times faster
+on the real index and 17 to 21 times faster on the scoring step at a million vectors. With a filter that keeps 53%,
+filtering first was 3 to 4 times *slower*, because it has to copy the surviving rows out before scoring them and a copy costs more than the
 arithmetic. This is also the answer to "how can hybrid search help performance": a selective filter on an index is
 nearly free and removes most of the expensive work. For very selective filters that benefit grows with the corpus. For
 middling ones (10% to 20% kept) it shrinks or reverses, which is why the switch is automatic.
@@ -111,7 +127,7 @@ reciprocal rank fusion: each patent gets 1/(60 + rank) from each list.
 
 **Why:** a keyword score and a cosine similarity are on different scales, and any weights would have to be tuned on
 relevance data I do not have. Ranks need no tuning. Keywords also earn their place: they catch exact part names that
-embeddings blur, and for a Chinese query they lifted the result from 0.770 to 0.862. Hybrid adds under 1 ms to a query.
+embeddings blur, and for a Chinese query they lifted the result from 0.824 to 0.895. Hybrid adds under 1 ms to a query.
 
 ## 8. One plain database now, one PostgreSQL later, no vector database
 

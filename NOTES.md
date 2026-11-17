@@ -451,6 +451,9 @@ Cost of query translation (laptop on battery in Low Power Mode, so read these as
 
 ### So, does it "perform comparably"?
 
+**Superseded.** The answer below was too generous. See "Found by using it" near the end of this file: merging raw
+scores across languages favoured Chinese, and the test in this section could not see it.
+
 - English query, foreign patents, mixed corpus: yes on this test set. The German and Chinese intervals both include zero
   and the gap is 1 to 2 points of MRR.
 - Foreign query, English patents: German yes (0.917 against 0.945). **Chinese no: 0.862 against 0.945**, and 0.770
@@ -599,3 +602,104 @@ patents and no foreign one. That pair of commands is the shortest demonstration 
   (1.1 GB) and `BAAI/bge-m3` (4.6 GB) from `compare_models.py`, and `opus-mt-ko-en` (0.6 GB), downloaded by mistake when
   the first language detector called some Chinese abstracts Korean.
 - `psycopg` and `pgserver` installed into `.venv` for the proof of concept.
+
+## Found by using it: scores from different languages are not on one scale
+
+After everything above was committed and checked, the first real query typed into the tool
+(`"wheel hub with integrated pressure sensor" --cpc B60B`) came back with two Chinese patents in the top five, both
+irrelevant, both displayed as a word repeated dozens of times. Two separate defects.
+
+### Defect 1: translating the query was not enough. Raw scores cannot be merged.
+
+Each language has its own score level. Mean similarity between a query and a fixed random sample of 2,000 passages of
+the same language, nearly all unrelated to the query:
+
+| Queries | English | German | Chinese |
+| --- | --- | --- | --- |
+| 20 short queries | 0.793 | 0.799 | 0.847 |
+| 100 claim-length queries | 0.809 | 0.825 | 0.869 |
+
+So a Chinese passage starts about 0.05 ahead of an English one before relevance counts for anything. My evaluation in
+Phase F asked one question, "is the right foreign patent found among English ones?", and a method that scores foreign
+patents too high passes that question. It never asked the opposite one.
+
+Two tests added to `scripts/evaluate_multilingual.py`, and what they show for the version I had shipped (raw scores):
+
+| Test | Raw scores | Calibrated |
+| --- | --- | --- |
+| English search, 100 Chinese patents added, semantic (MRR, was 0.930) | 0.730 | 0.920 |
+| Same, hybrid (was 0.945) | 0.908 | 0.950 |
+| English search, 100 German patents added, hybrid | 0.953 | 0.945 |
+| 20 short queries, top 10 each: English / German / Chinese versions of the test patents, semantic | 4 / 2 / 154 | 19 / 40 / 18 |
+| Same, hybrid | 16 / 8 / 65 | 24 / 20 / 9 |
+
+- **Ruling: scores are compared relative to each language's own level.** For each query, the sample of each language is
+  scored against that language's version of the query. A passage's score becomes (score - sample mean) / sample
+  spread, and patents are merged on that. The similarity shown to the user is still the plain one. The raw merge stays
+  available as `--cross-lingual uncalibrated` so the comparison can be re-run.
+  Cost if wrong: it assumes most sampled passages are unrelated to the query and that languages cover the same mix of
+  topics. True here by construction. Not guaranteed on real data.
+- I tried three other ways first. Subtracting the mean only: English 0.940, German 0.827, Chinese 0.415 on the "is it
+  found" test, and it over-corrects. Scaling between the background and the query's similarity to itself: 0.812 and
+  0.741. Scaling to the top 1% of the background: 0.815 and 0.805. Mean and spread was the best balance of the two
+  questions (0.890 and 0.804 here, and no harm to English).
+- A language with fewer than 200 embedded passages borrows English's level. Shortcut, marked in the code.
+
+### What "comparable" looks like now (final run, hybrid, calibrated, the default)
+
+| Test | English | German | Chinese |
+| --- | --- | --- | --- |
+| Right patent, alone in its language | 0.990 | 0.972 (-0.018, -0.038 to -0.003) | 0.966 (-0.024, -0.046 to -0.005) |
+| Right patent among 540 other English patents | 0.945 | 0.908 (-0.037, -0.073 to -0.002) | 0.801 (-0.143, -0.200 to -0.091) |
+| Recall at 1 / at 10 in that test | 0.90 / 1.00 | 0.86 / 0.99 | 0.71 / 0.96 |
+| English search after adding that language | 0.945 | 0.945 (+0.001) | 0.950 (+0.005) |
+| Query in that language, English patents | 0.945 | 0.917 (-0.028, -0.056 to -0.006) | 0.895 (-0.050, -0.095 to -0.009) |
+
+German is 2 to 4 points behind everywhere. Chinese is clearly behind when it has to compete with English patents.
+The Phase F figure of 0.933 for Chinese was inflated by the offset this section describes. The honest figure is 0.801.
+
+Why I believe the calibrated numbers more: they agree with the one test that never depended on merging languages. In the
+foreign query test all candidates are English, and there German was 3 points behind and Chinese 5 to 11.
+
+### Defect 2: the translation model gets stuck, and my test set was full of it
+
+The English to Chinese model sometimes repeats one word until it hits the length limit. 284 of 5,733 Chinese test
+passages (5%) contained such a run, so did some German ones. The display then translated the run faithfully
+("wheel wheel wheel wheel ..."). The cause was in my own test set builder, not in search.
+
+- **Ruling: a translation that repeats the same few letters six or more times in a row is translated again** with
+  repeated three word sequences forbidden. Tested on the two passages from the bad output: both come out readable.
+  Applied everywhere translation is used (building the test set, ingest, queries, display).
+- After rebuilding the test set: 0 of 5,734 German and 0 of 5,733 Chinese passages are stuck.
+- Cleaning the test set changed some numbers. The Chinese query test rose from 0.862 to 0.895 (hybrid) and from 0.770
+  to 0.824 (semantic), because Chinese claims used as queries are no longer garbled. The shared space numbers alone in
+  one language rose a little (German 0.409 to 0.459, Chinese 0.210 to 0.227).
+
+### Third check from scratch
+
+Fresh clone, new virtual environment, every README command in order, this time in one unbroken pass, exit code 0.
+On battery in Low Power Mode.
+
+| What | Value |
+| --- | --- |
+| Embedding 32,772 vectors | 129.4 s. Whole `ingest data/small` 2 min 16 s |
+| Benchmark | 2 min 54 s. Semantic 15.9 ms, hybrid 17.0 ms, keyword 1.2 ms |
+| 1% filter, first against after | 0.40 against 1.64 ms (4.1 times). At 983,160 vectors 3.9 against 65.9 ms (17 times) |
+| Tests | 93 passed in 1.2 s |
+| Building the German and Chinese set, with retries | 403 s and 552 s (6,902 and 5,034 characters per second), 15 min 56 s in all |
+| `ingest data/parallel` | 5 min 31 s: 100,183 characters translated in 223.1 s (449 per second), 11,827 vectors in 44.5 s |
+| Evaluation | 5 min 40 s |
+| Query translation, claim-length, 2 languages | median 1,224 ms, slowest 3,056 ms. Cache hit 0.05 ms. Bulk 5,814 characters per second |
+| Proof of concept, 840 patents | exact 10 rows in 1.31 ms, approximate index 6 rows, largest setting 8 rows, same 10 patents as the Python search |
+| Model comparison, re-run on the rebuilt set (German / Chinese target, mixed, abstracts only) | e5-small 0.017 / 0.008, e5-base 0.110 / 0.025, bge-m3 0.310 / 0.099 |
+
+The benchmark has now been run five times since the sort was removed. The direction of every comparison was the same
+each time. The size of the advantage moved: a 1% filter was 3.2, 5.8, 5.7, 5.3 and 4.1 times faster on the real index,
+and 18.6, 20.2, 20.5 and 17.1 times at a million vectors.
+
+### What I take from this
+
+The evaluation was honest about being synthetic and still wrong about the conclusion, because it measured one side of
+the question. I did not find that by reviewing the numbers or by the independent review. I found it by typing a query.
+The test that would have caught it is now in the evaluation, and both README demonstrations were re-chosen: the old
+pair (a Chinese patent appearing at rank 3) was itself an example of the bias.
