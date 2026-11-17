@@ -35,7 +35,11 @@ CREATE TABLE IF NOT EXISTS passages (
     text TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_passages_patent ON passages(patent_id);
+-- Two full text tables over the same English title and abstract. `patents_fts` stems words, which helps
+-- ranking ("grooved" finds "grooves"). `patents_words` does not, and serves the keyword filter: stemmed,
+-- "generator" passed patents that only say "generally" or "generic".
 CREATE VIRTUAL TABLE IF NOT EXISTS patents_fts USING fts5(title_en, abstract_en, tokenize='porter unicode61');
+CREATE VIRTUAL TABLE IF NOT EXISTS patents_words USING fts5(title_en, abstract_en, tokenize='unicode61');
 -- cache; `text_en` holds the translation (into English, or into the model's target for translated queries)
 CREATE TABLE IF NOT EXISTS translations (key TEXT PRIMARY KEY, model TEXT NOT NULL, text_en TEXT NOT NULL);
 """
@@ -51,4 +55,9 @@ def connect(path=None):
     con = sqlite3.connect(os.path.join(path, "patents.db"))
     con.row_factory = sqlite3.Row
     con.executescript(SCHEMA)
+    if not con.execute("SELECT 1 FROM patents_words LIMIT 1").fetchone():
+        # An index built before this table existed: fill it once, or the keyword filter would pass nothing.
+        con.execute("INSERT INTO patents_words (rowid, title_en, abstract_en) "
+                    "SELECT id, COALESCE(title_en, ''), COALESCE(abstract_en, '') FROM patents")
+        con.commit()
     return con

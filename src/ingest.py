@@ -133,8 +133,9 @@ def insert_patent(con, patent, collection):
          patent["raw_classification"] if patent["codes"] else None, patent["bibtex"], patent["filename"],
          patent["filing_week"], language, ",".join(patent["missing"]))).lastrowid
     con.executemany("INSERT INTO classifications VALUES (?,?,?)", [(patent_id, c, c[:4]) for c in patent["codes"]])
-    con.execute("INSERT INTO patents_fts (rowid, title_en, abstract_en) VALUES (?,?,?)",
-                (patent_id, title_en or "", abstract_en or ""))
+    for table in ("patents_fts", "patents_words"):  # stemmed for ranking, whole words for the keyword filter
+        con.execute(f"INSERT INTO {table} (rowid, title_en, abstract_en) VALUES (?,?,?)",
+                    (patent_id, title_en or "", abstract_en or ""))
     rows = [(patent_id, "abstract", 0, 0, None, patent["abstract"])] if patent["abstract"] else []
     rows += [(patent_id, "claim", c["number"], c["inferred"], c["parent"], c["text"]) for c in patent["claims"]]
     rows += [(patent_id, "description", i + 1, 0, None, text) for i, text in enumerate(patent["description"])]

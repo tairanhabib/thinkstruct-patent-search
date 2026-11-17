@@ -83,6 +83,21 @@ def _terms(text):
     return list(dict.fromkeys(t for t in re.findall(r"\w+", (text or "").lower()) if t not in STOPWORDS and len(t) > 1))
 
 
+def _forms(word):
+    """A keyword and its plain plural or singular, so 'sensor' passes 'sensors' and the reverse.
+    Nothing wider: 'general' must not pass 'generally'."""
+    forms = {word, word + "s", word + "es"}
+    if word.endswith("ies"):
+        forms.add(word[:-3] + "y")
+    elif word.endswith("es"):
+        forms.add(word[:-2])
+    if word.endswith("s") and not word.endswith("ss"):
+        forms.add(word[:-1])
+    if word.endswith("y"):
+        forms.add(word[:-1] + "ies")
+    return sorted(forms)
+
+
 def filter_patents(index, cpc_prefix=None, keywords=None, title=None, date_from=None, date_to=None, language=None,
                    include_unknown=False, restrict_docs=None):
     """Boolean table over patent ids of the patents that pass every filter, or None when there is no filter.
@@ -100,9 +115,10 @@ def filter_patents(index, cpc_prefix=None, keywords=None, title=None, date_from=
         params.append(re.sub(r"[^A-Z0-9]", "", cpc_prefix.upper()) + "*")  # 'b60b 1/04' and 'B60B104' both work
     words = re.findall(r"\w+", (keywords or "").lower())  # every word counts here, common ones too
     if words:
-        where.append("(p.id IN (SELECT rowid FROM patents_fts WHERE patents_fts MATCH ?)"
+        where.append("(p.id IN (SELECT rowid FROM patents_words WHERE patents_words MATCH ?)"
                      f"{unknown('p.title IS NULL OR p.abstract IS NULL')})")
-        params.append(" AND ".join(f'"{word}"' for word in words))  # every keyword must appear
+        # every keyword must appear, as a whole word: this table is not stemmed
+        params.append(" AND ".join("(" + " OR ".join(f'"{form}"' for form in _forms(word)) + ")" for word in words))
     if title:
         pattern = "%" + re.sub(r"([\\%_])", r"\\\1", title.strip()) + "%"
         where.append(f"(p.title LIKE ? ESCAPE '\\' OR p.title_en LIKE ? ESCAPE '\\'{unknown('p.title IS NULL')})")

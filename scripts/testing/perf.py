@@ -117,6 +117,9 @@ def scale(args):
                     (s, p, passages))
         con.execute("INSERT INTO patents_fts (rowid, title_en, abstract_en) SELECT rowid + ?, title_en, abstract_en FROM patents_fts WHERE rowid < ?",
                     (p, patents))
+        # added by the builder with the M4 fix: the keyword filter now reads its own table, which must grow too
+        con.execute("INSERT INTO patents_words (rowid, title_en, abstract_en) SELECT rowid + ?, title_en, abstract_en FROM patents_words WHERE rowid < ?",
+                    (p, patents))
     con.commit()
     con.execute("ANALYZE")
     con.commit()
