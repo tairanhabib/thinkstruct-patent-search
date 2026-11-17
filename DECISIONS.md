@@ -37,7 +37,7 @@ depends on translation quality forever, and the translation bill grows with the 
 
 **Why:** a query is a sentence. A corpus is hundreds of gigabytes. Translating the short side fixed the gap (hybrid MRR 0.921 German,
 0.933 Chinese, 0.945 English) and keeps the documents untouched. The cost is one translation per language for a new query
-(about 1.3 seconds for a full claim, measured on the slow side, then cached) and a new dependency on translating the
+(about 1.2 seconds for a full claim, measured on the slow side, then cached) and a new dependency on translating the
 query well.
 
 **What I am not sure of:** those numbers come from machine translated test patents, made by the same models that
@@ -68,7 +68,8 @@ backwards (foreign query, English patents).
 **Why:** a real corpus is mixed, and the mixed test is where the first design fell apart. On its own, German looked
 merely worse (0.409). Mixed, it was invisible (0.007). Looking at a few results would have missed it entirely, because
 every result returned was a plausible English patent. The backwards test matters because it is the only one where the
-documents are original human text, and it is the one that shows Chinese still falling short (0.862 against 0.945).
+documents are original human text (the query is still a machine translation of that patent's own claim), and it is the
+one that shows Chinese still falling short (0.862 against 0.945).
 
 **What it does not measure:** real foreign patents, real relevance (finding the same patent is a stand-in), or more than
 one technical field.
@@ -94,11 +95,12 @@ score everything in place and discard afterwards. The switch is automatic.
 
 **Rejected:** always filtering first (my plan), and always filtering afterwards (the naive way).
 
-**Why:** I measured both. With a filter that keeps 1% of vectors, filtering first was 6 times faster on the real index
-and 19 times faster at a million vectors. With a filter that keeps 53%, filtering first was 2.7 times *slower*, because
-it has to copy the surviving rows out before scoring them and a copy costs more than the arithmetic. This is also the
-answer to "how can hybrid search help performance": a selective filter on an index is nearly free and removes most of
-the expensive work, and the benefit grows with the corpus.
+**Why:** I measured both. With a filter that keeps 1% of vectors, filtering first was 5 times faster on the real index
+and 20 times faster on the scoring step at a million vectors. With a filter that keeps 53%, filtering first was 2.8
+times *slower*, because it has to copy the surviving rows out before scoring them and a copy costs more than the
+arithmetic. This is also the answer to "how can hybrid search help performance": a selective filter on an index is
+nearly free and removes most of the expensive work. For very selective filters that benefit grows with the corpus. For
+middling ones (10% to 20% kept) it shrinks or reverses, which is why the switch is automatic.
 
 ## 7. Combine keyword and meaning by rank, not by score
 
@@ -118,7 +120,7 @@ holding metadata, full text and vectors together.
 
 **Rejected:** a dedicated vector database beside a relational one.
 
-**Why:** at 640 patents, exact search over all 32,772 vectors takes 1.4 ms, so any index structure is overhead, and
+**Why:** at 640 patents, exact search over all 32,772 vectors takes under 2 ms, so any index structure is overhead, and
 the reviewer installs nothing. At scale, keeping everything in one database makes the hybrid query a single SQL
 statement, gives one thing to back up, and means text, keywords and vectors can never disagree about which patents
 exist. The proof of concept shows the statement working and returning the same ten patents as the Python search. It

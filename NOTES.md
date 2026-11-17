@@ -535,3 +535,67 @@ Claims corrected in the README and DECISIONS (the measurements were right, the s
   embed (not 246).
 - On this test, keyword only search is as good as or better than hybrid for English (0.964 against 0.945). The
   description and abstract of a patent repeat the words of its claim, which suits keywords. Hybrid is not tuned.
+
+## Final check from scratch
+
+What I did: `git clone` of this repository into an empty directory, a new virtual environment from
+`requirements.txt`, the data taken from the original archive with the README's `unzip` command, then every command in
+the README, in README order, copied literally. The committed `benchmarks.md` and `eval_results.md` are the files this
+run wrote.
+
+What happened:
+
+1. First attempt, on the code before the review fixes: Part 1 ran clean. I stopped it during Part 3 because the review
+   had come back and I was about to change code.
+2. Second attempt, on the fixed code: everything ran until `scripts/evaluate_multilingual.py`, which **failed**. One
+   of my review fixes (refusing passage types in keyword only search) broke a call inside the evaluation. No unit test
+   covered the script. Fixed, and a test now runs every evaluation method on a small index.
+3. Resumed from the evaluation step in the same clone, after emptying the translation cache there so the evaluation
+   started cold. Ran to the end, exit code 0.
+
+So the README commands have all run on the final code, but not in one unbroken pass: steps up to the German and Chinese
+ingest ran on the commit before the last fix (which touched only the evaluation script and a test), and the rest ran
+on the final commit.
+
+Deviations from the README text:
+- The proof of concept's data folder was in my scratch directory, not `/tmp/patent-poc-pgdata`.
+- The embedding and translation models were already in the Hugging Face cache, so download time is not included in
+  any time below. Sizes on disk: embedding model 493 MB, four translation models about 600 MB each (2.45 GB).
+- The laptop was on battery in Low Power Mode. The power state during Phases B and C was not recorded.
+
+Not covered by this check: the Docker path, a machine with no cached models, a machine without a GPU, another
+operating system.
+
+Numbers from this run, next to the earlier ones:
+
+| What | Final run | Earlier runs |
+| --- | --- | --- |
+| Embedding 32,772 vectors | 237.0 s (138 per second). The laptop was partly idle during this step, so read it as a worst case | 99.2 s, 101.5 s, 123.5 s, 143.2 s |
+| Whole `ingest data/small` | 8 min 45 s | 1 min 46 s to 2 min 29 s |
+| Command line start | 7.7 s typical, 56.6 s once right after the slow ingest | 9.3 s |
+| Benchmark script | 2 min 46 s | 2 min 42 s |
+| Semantic / hybrid / keyword, whole call | 16.3 / 16.7 / 1.2 ms | 16.6 / 16.7 / 1.1 ms |
+| Scoring 32,772 vectors, no filter | 1.57 to 1.83 ms | 1.30 to 1.99 ms |
+| 1% filter, filter and score, first against after | 0.41 against 2.14 ms (5.3 times) | 0.44 against 2.59 ms (5.8 times) |
+| Same at 983,160 vectors, scoring only | 3.0 against 61.2 ms (20.5 times) | 2.3 against 43.1 ms (18.6 times) |
+| 53% filter, first against after | 6.64 against 2.40 ms | 7.42 against 2.70 ms |
+| Tests | 90 passed in 1.2 s | |
+| Building the German and Chinese set | 398 s and 500 s (6,989 and 5,558 characters per second), 15 min 0 s in all | 395 s and 458 s, 14 min 15 s |
+| `ingest data/parallel` | 4 min 48 s: 100,823 characters translated in 225.9 s (446 per second), 11,870 vectors in 50.0 s | 4 min 37 s, 448 per second, 47.2 s |
+| Evaluation script | 3 min 59 s | |
+| Evaluation tables | identical to Phase F in every MRR to three decimals | |
+| Query translation, claim-length, 2 languages, models loaded | median 1,218 ms, slowest 2,114 ms. Cache hit 0.06 ms | median 1,340 ms (measured differently, see the review section) |
+| Bulk query translation | 265,822 characters in 48 s (5,511 per second) | |
+| Foreign query table, new intervals | German hybrid gap -0.028 (-0.056 to -0.006). Chinese hybrid gap -0.082 (-0.138 to -0.030) | |
+| Proof of concept, re-run by me with 840 patents loaded | exact 10 rows in 1.31 ms, approximate index 6 rows, largest setting 8 rows in 12.4 ms, same 10 patents as the Python search | 640 patents: 1.15 ms, 6 rows, 8 rows in 11.1 ms |
+
+One more thing the check showed. With the German and Chinese copies in the index, the same English query run both ways:
+the default returns a Chinese patent at rank 3 (shown in English), and `--cross-lingual shared` returns five English
+patents and no foreign one. That pair of commands is the shortest demonstration of the main finding.
+
+## Left on this machine
+
+- Model files in the Hugging Face cache (`~/.cache/huggingface`): the models above, plus `multilingual-e5-base`
+  (1.1 GB) and `BAAI/bge-m3` (4.6 GB) from `compare_models.py`, and `opus-mt-ko-en` (0.6 GB), downloaded by mistake when
+  the first language detector called some Chinese abstracts Korean.
+- `psycopg` and `pgserver` installed into `.venv` for the proof of concept.

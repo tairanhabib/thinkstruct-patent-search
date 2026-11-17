@@ -4,6 +4,8 @@ Take-home for Thinkstruct. Part 1 is a hybrid search engine over patent passages
 patents with a small proof of concept. Part 3 is the machine translation enhancement: ingest, search and display
 patents that are not in English.
 
+**Video (2 minutes, Parts 2 and 3):** link to be added.
+
 Everything measured here was measured on an Apple M2 Pro laptop (10 cores, 16 GB). The full log of decisions, numbers
 and known weaknesses is in [NOTES.md](NOTES.md). The eight decisions that matter most are in [DECISIONS.md](DECISIONS.md).
 
@@ -53,7 +55,8 @@ python scripts/benchmark.py
 python -m pytest
 ```
 
-- `ingest` takes about 2 minutes (it embeds 32,772 passage vectors). The first run downloads the embedding model, 493 MB.
+- `ingest` takes 2 to 4 minutes on my laptop. It embeds 32,772 passage vectors, which took between 99 s and 237 s over
+  four runs (the slowest on battery in Low Power Mode). The first run downloads the embedding model, 493 MB.
 - `search` and `similar` take about 10 seconds to start, almost all of it loading the model. The search itself takes
   about 17 ms.
 - `benchmark.py` takes about 3 minutes, needs about 3 GB of free memory, and rewrites `benchmarks.md`. Run it before
@@ -71,6 +74,7 @@ python cli.py ingest data/parallel
 python scripts/evaluate_multilingual.py
 python cli.py search "pressure sensor that reports tire pressure to the driver" --language de --top 3
 python cli.py search "轮辋上带有压力传感器的车轮" --top 3 --show-original
+python cli.py search "pressure sensor that reports tire pressure to the driver" --top 5
 python cli.py search "pressure sensor that reports tire pressure to the driver" --top 5 --cross-lingual shared
 python cli.py show --doc 20240083200-ZH
 ```
@@ -78,8 +82,10 @@ python cli.py show --doc 20240083200-ZH
 - `make_parallel_set.py` machine translates 100 of the English patents into German and Chinese (about 15 minutes) and
   writes them to `data/parallel/`. It downloads two translation models, about 600 MB each.
 - `ingest data/parallel` takes about 5 minutes and downloads two more translation models.
-- `evaluate_multilingual.py` takes about 5 minutes and rewrites `eval_results.md`.
-- The last search uses the approach that failed (section 7), for comparison.
+- `evaluate_multilingual.py` takes about 4 minutes and rewrites `eval_results.md`.
+- The search with `--cross-lingual shared` uses the approach that failed (section 7). Compare it with the line above
+  it: the same query, and the Chinese patent at rank 3 is gone.
+- The first search after start loads a translation model per language, which adds a few seconds.
 - Optional: `python scripts/compare_models.py` repeats a small version of the test with two larger embedding models.
   It downloads 5.7 GB.
 
@@ -132,7 +138,7 @@ Main choices, each with the reason:
 
 | Choice | Why |
 | --- | --- |
-| SQLite plus a NumPy array | Nothing to install or start. Exact search over 33,000 vectors takes 1.4 ms, so an index structure would add nothing |
+| SQLite plus a NumPy array | Nothing to install or start. Exact search over 33,000 vectors takes under 2 ms, so an index structure would add nothing |
 | `intfloat/multilingual-e5-small` | One model for about 100 languages, reads 512 tokens (the common alternative reads 128), small enough for a laptop |
 | Translate the query, not the documents | Measured: one shared vector space does not work across languages (section 7). The query is short, the corpus is not |
 | Translate only title and abstract at ingest | Keywords need English words. Translating all text for 10 million patents would cost about 33 times more ([scale design](docs/scale_design.md)) |
@@ -184,41 +190,50 @@ Full tables: [benchmarks.md](benchmarks.md). 20 fixed queries, 5 runs each, medi
 
 | | Whole call | Of which encoding the query | Everything else |
 | --- | --- | --- | --- |
-| Semantic only (hybrid off) | 16.6 ms | 14.8 ms | 1.9 ms |
-| Hybrid (keyword and semantic, fused) | 16.7 ms | 13.9 ms | 2.8 ms |
-| Keyword only | 1.1 ms | none | 1.1 ms |
+| Semantic only (hybrid off) | 16.3 ms | 14.1 ms | 2.3 ms |
+| Hybrid (keyword and semantic, fused) | 16.7 ms | 13.7 ms | 2.8 ms |
+| Keyword only | 1.2 ms | none | 1.0 ms |
 
 Hybrid search with filters, filter and scoring steps only:
 
 | Filter | Vectors kept | Filter first | Filter after | Auto (default) |
 | --- | --- | --- | --- | --- |
-| none | 100% | 1.91 ms | | |
-| classification `B60C` | 53% | 7.42 ms | 2.70 ms | 2.72 ms |
-| keyword `rubber` | 11% | 1.15 ms | 2.31 ms | 1.32 ms |
-| classification `B60D` | 2.9% | 0.45 ms | 1.49 ms | 0.48 ms |
-| title contains `wheel bearing` | 1.0% | 0.44 ms | 2.59 ms | 0.43 ms |
+| none | 100% | 1.57 ms | | |
+| classification `B60C` | 53% | 6.64 ms | 2.40 ms | 1.71 ms |
+| keyword `rubber` | 11% | 0.89 ms | 1.78 ms | 0.87 ms |
+| classification `B60D` | 2.9% | 0.43 ms | 1.58 ms | 0.43 ms |
+| title contains `wheel bearing` | 1.0% | 0.41 ms | 2.14 ms | 0.40 ms |
 
 The same scoring step on the vectors copied 30 times (983,160 vectors):
 
 | Filter | Vectors kept | Filter first | Filter after |
 | --- | --- | --- | --- |
-| none | 100% | 70.5 ms | |
-| classification `B60C` | 53% | 240.2 ms | 69.3 ms |
-| classification `B60D` | 2.9% | 7.7 ms | 44.0 ms |
-| title contains `wheel bearing` | 1.0% | 2.3 ms | 43.1 ms |
+| none | 100% | 67.7 ms | |
+| classification `B60C` | 53% | 234.5 ms | 67.1 ms |
+| keyword `rubber` | 11% | 52.6 ms | 60.6 ms |
+| classification `B60D` | 2.9% | 11.5 ms | 62.5 ms |
+| title contains `wheel bearing` | 1.0% | 3.0 ms | 61.2 ms |
 
 What I take from this:
 
-1. **At this size the search is not the cost.** Encoding the query is about 85% of a call. Hybrid adds under 1 ms.
-2. **Filtering first helps in proportion to how selective the filter is, and more as the corpus grows.** A filter that
-   keeps 1% of vectors made scoring 6 times faster here and 19 times faster at a million vectors. This is how hybrid
-   search helps performance at scale: the filter is cheap on an index, and it removes most of the expensive work.
+1. **At this size the search is not the cost.** Encoding the query is about 85% of a call (14 of 16.7 ms). Hybrid
+   adds about half a millisecond to semantic search.
+2. **Filtering first helps in proportion to how selective the filter is.** A filter that keeps 1% of the vectors made
+   the filter and scoring steps 5 times faster on the real index (0.41 ms against 2.14 ms). On the scoring step alone
+   at a million vectors the same filter was 20 times faster (3.0 ms against 61.2 ms). This is how hybrid search helps
+   performance at scale: a selective filter on an index is cheap, and it removes most of the expensive work. The
+   advantage grows with the corpus only for very selective filters. For a filter that keeps 11% it was 2.0 times on
+   the real index and 1.2 times at a million vectors.
 3. **Filtering first hurts when the filter is not selective.** It has to copy the surviving rows out of the matrix, and
-   copying costs more per row than scoring in place. With 53% kept it was 2.7 times slower. So the default is `auto`:
-   filter first when under 15% of vectors survive, score in place otherwise. The plan said "always filter first"; the
-   measurement said otherwise.
+   copying costs more per row than scoring in place. With 53% kept it was 2.8 times slower. So the default is `auto`:
+   filter first when under 15% of vectors survive, score in place otherwise. My initial plan said "always filter
+   first"; the measurement said otherwise.
 4. **The biggest win was not about filters.** My first version sorted every passage score to find the best passage per
-   patent. Replacing the sort with one pass per patent made every query about 5 times faster (7.5 ms to 1.4 ms).
+   patent. Replacing the sort with one pass per patent made the scoring step about 5 times faster (7.5 ms to under
+   2 ms). The whole call went from about 22 ms to about 16 ms, because encoding the query dominates.
+
+These numbers are from the final run, which was on battery in Low Power Mode. Earlier runs on the same machine were
+within about 25% of them.
 
 Done to make it efficient: vectors normalized at ingest, filters in SQL before scoring, one pass instead of a sort, the
 adaptive strategy, cached translations, the query translated only into languages that survive the filters.
@@ -269,7 +284,12 @@ one language among the 540 other English patents. The number is mean reciprocal 
 | Semantic, query translated | 0.930 | 0.912 | 0.920 |
 | **Hybrid, query translated (the default)** | **0.945** | **0.921** | **0.933** |
 
-With the shared space, not one of the 200 foreign targets reached the first ten results.
+With semantic search on the shared space, not one of the 200 foreign targets reached the first ten results. With
+keywords fused in, 19 did.
+
+Two notes on reading the table. The 100 test patents were drawn at random from the 505 that have a description and a
+first claim of at least 150 characters. And for English, keyword search alone does as well as hybrid on this test (0.964
+against 0.945), because a patent's abstract repeats the words of its claim. The fusion is not tuned.
 
 **Why.** The model has a language bias. Two unrelated passages in the same language score higher than a passage and its
 own translation: 27.5% of all other English abstracts outscore a patent's own German copy, and 76.2% outscore its own
@@ -288,21 +308,24 @@ translated: title and abstract at ingest (for keywords), the query (short, cache
 | Hybrid, query translated | English | German | Chinese |
 | --- | --- | --- | --- |
 | Mixed corpus | 0.945 | 0.921 (gap -0.023, interval -0.059 to +0.009) | 0.933 (gap -0.012, interval -0.053 to +0.028) |
-| Foreign query against the 640 English patents | 0.945 | 0.917 | 0.862 |
+| Foreign query against the 640 English patents | 0.945 | 0.917 (gap -0.028, interval -0.056 to -0.006) | 0.862 (gap -0.082, interval -0.138 to -0.030) |
 
-So: for an English query over a mixed corpus the gap is 1 to 2 points and the interval includes zero. For a German query
-the same. **For a Chinese query it does not hold: 0.862 against 0.945.**
+So: for an English query over a mixed corpus the gap is 1 to 2 points and the interval includes zero. For a German
+query against English patents it is 3 points and the interval just excludes zero. **For a Chinese query it does not
+hold: 8 points.** Tested alone, with no English patents in the way, German and Chinese are each about 2 points below
+English, also just outside zero. So "comparable" here means within about 3 points, except for Chinese queries.
 
-Translating a claim-length query into two languages took a median of 1.3 seconds the first time and 0.05 ms once cached
-(measured in Low Power Mode on battery, so on the slow side).
+Translating a claim-length query into two languages took a median of 1.2 seconds with the models already loaded, and
+under 0.1 ms once cached (measured on battery in Low Power Mode, so on the slow side).
 
 ### What this does not prove
 
 - **The test patents are machine translated, not real.** Real foreign patents are written by people and are messier.
 - **The good German and Chinese numbers in the mixed table are an upper bound.** The copies were made by the same
   translation models that then translate the query, so the wording matches more than it would with real patents. The
-  "foreign query" row does not have this flaw: the query goes through a different model and has to match text a person
-  wrote. That row is the one I trust, and it is the one where Chinese falls short.
+  "foreign query" row is less affected: the query goes through a different model and has to match text a person wrote.
+  It is still a round trip of that patent's own claim. It is the least flattering row, and it is the one where Chinese
+  falls short.
 - **Finding the same patent is a stand-in for relevance.** A description often repeats its claim nearly word for word.
 - 100 queries, one technical field, two languages.
 
@@ -370,7 +393,7 @@ German and comes back as "Speaker". The Chinese model wrote "claim" as a claim f
 | `cli.py` | Command line: `ingest`, `search`, `similar`, `show`, `stats` |
 | `src/` | `db.py`, `ingest.py`, `embed.py`, `translate.py`, `search.py` |
 | `scripts/` | `inspect_data.py`, `benchmark.py`, `make_parallel_set.py`, `evaluate_multilingual.py`, `compare_models.py` |
-| `tests/` | 89 tests, no model needed |
+| `tests/` | 90 tests, no model needed |
 | `benchmarks.md`, `eval_results.md` | Generated tables |
 | `docs/scale_design.md`, `docs/architecture.md` | Part 2 design, project diagram |
 | `poc/`, `docker-compose.yml` | Part 2 proof of concept |
