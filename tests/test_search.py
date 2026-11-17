@@ -221,3 +221,17 @@ def test_translated_title_is_what_keyword_search_reads(build_index, monkeypatch)
     index, _ = build_index([GERMAN, OTHER])
     assert docs(search(keywords="sensor", index=index)) == ["D-GERMAN"]  # the English word is only in the translation
     assert search(keywords="Drucksensor", index=index) == []  # the German word is not indexed for keywords
+
+
+def test_the_evaluation_script_can_run_every_method(build_index):
+    import importlib.util
+    import pathlib
+    path = pathlib.Path(__file__).parent.parent / "scripts" / "evaluate_multilingual.py"
+    spec = importlib.util.spec_from_file_location("evaluate_multilingual", path)
+    evaluation = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(evaluation)
+    index, _ = build_index([COMPLETE, OTHER])
+    for mode, method, _ in evaluation.METHODS:
+        ranks = evaluation.reciprocal_ranks(index, ["tread with circumferential grooves and sipes that drain water"],
+                                            ["D-OTHER"], ["D-COMPLETE", "D-OTHER"], mode, method)
+        assert ranks.tolist() == [1.0], (mode, method)

@@ -44,7 +44,9 @@ def reciprocal_ranks(index, queries, targets, candidates, mode, method, timings=
     out = []
     for query, target in zip(queries, targets):
         info = {}
-        results = search(query, mode=mode, cross_lingual=method, passage_types=["abstract", "description"],
+        # Keyword search reads only title and abstract, so it needs no passage type to keep the claims out.
+        results = search(query, mode=mode, cross_lingual=method,
+                         passage_types=None if mode == "keyword" else ["abstract", "description"],
                          restrict_docs=candidates, top_k=len(candidates), translate_results=False, index=index, info=info)
         found = [i for i, result in enumerate(results, 1) if result["doc_number"] == target]
         out.append(1.0 / found[0] if found else 0.0)

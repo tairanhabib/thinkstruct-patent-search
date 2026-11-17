@@ -3,7 +3,8 @@
 Each one says what I chose, what I rejected, and why, in plain language. Numbers are from [NOTES.md](NOTES.md),
 [benchmarks.md](benchmarks.md) and [eval_results.md](eval_results.md).
 
-"MRR" below is mean reciprocal rank: 1.0 means the right patent is always first, 0.5 means it is second on average.
+"MRR" below is mean reciprocal rank: the average of 1/rank of the right patent. 1.0 means it is always first, and a
+search that always puts it second scores 0.5.
 
 ## 1. Search passages, not whole patents
 
@@ -25,14 +26,16 @@ language in the index, and each passage is scored against the query in its own l
 **Rejected, first:** the plan I started with. One multilingual model, one shared vector space, no translation for
 search at all. I built it and measured it. In a corpus that mixes languages it fails completely: for an English query the
 right German patent had an MRR of 0.007 and the right Chinese one 0.003, against 0.930 for English. Not one of 200
-foreign targets reached the first ten results. The model scores two unrelated English passages as more alike than a
-passage and its own translation. Bigger models reduced this and none removed it (the best of three reached 0.310).
+foreign targets reached the first ten results (with keywords fused in, 19 of 200 did). The model often scores two
+unrelated English passages as more alike than a passage and its own translation: for 27.5% of other English abstracts
+against a patent's German copy, and 76.2% against its Chinese copy. Bigger models reduced this and none removed it (the
+best of three reached 0.310).
 
 **Rejected, second:** translating every document to English and searching in English. It works, but search quality then
 depends on translation quality forever, and the translation bill grows with the corpus: $720,000 at hosted prices for
 10 million patents, against $22,080 for title and abstract.
 
-**Why:** a query is a sentence. A corpus is terabytes. Translating the short side fixed the gap (hybrid MRR 0.921 German,
+**Why:** a query is a sentence. A corpus is hundreds of gigabytes. Translating the short side fixed the gap (hybrid MRR 0.921 German,
 0.933 Chinese, 0.945 English) and keeps the documents untouched. The cost is one translation per language for a new query
 (about 1.3 seconds for a full claim, measured on the slow side, then cached) and a new dependency on translating the
 query well.
@@ -80,7 +83,7 @@ missing field leaves the patent out of *that* search only, and `--include-unknow
 **Why:** 119 of the 640 patents have an empty description. Excluding them would silently remove 19% of the prior art, and
 a search tool that hides prior art without saying so is worse than one with gaps it shows. The filter rule follows from
 the same idea: "we do not know its classification" is not the same as "it is not in B60B", so the user decides.
-The same reasoning covers damaged claims: 3,225 claims lost their number and opening words in the source. They are
+The same reasoning covers damaged claims: 3,223 claims lost their number and opening words in the source. They are
 kept, numbered as "previous claim plus one" (right in 1,300 of 1,335 places where it can be checked), and labelled as
 inferred.
 

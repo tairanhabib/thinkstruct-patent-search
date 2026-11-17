@@ -123,9 +123,9 @@ Commands: `python cli.py ingest data/small`, `python cli.py stats`
 | Patents with a missing field | 119 (empty description) |
 | Passages stored | 32,272: 640 abstracts, 10,411 claims, 21,221 description paragraphs |
 | Cancelled claims dropped | 167 (five different formats, for example `1 .- 15 . (canceled)`) |
-| Claims with an inferred number | 3,225 |
+| Claims with an inferred number | 3,223 |
 | Claims with a stated parent claim | 7,101 |
-| Passages too short to embed | 246 (105 claims, 141 description paragraphs) |
+| Passages too short to embed | 206 (65 claims, 141 description paragraphs) |
 | Passages embedded | 32,066, as 32,772 vectors (long passages give several) |
 | Vectors longer than 512 tokens (tail cut off by the model) | 6 of 32,772 |
 | Embedding time | 99.2 s and 143.2 s on two runs (330 and 229 vectors per second), Apple M2 Pro GPU (MPS) |
@@ -176,7 +176,7 @@ python -m pytest
 | Classification filter | Prefix match on the code with spaces and slashes removed, so `B60B`, `b60b 27` and `B60B27/00` all work | The data cannot separate group from subgroup, so a prefix is the honest operation. |
 | Date filter | `--from` and `--to` on the filing week | |
 | Other filters | Original language, passage type | |
-| Search by patent | Uses the stored vector of the named claim, else the abstract, else the first claim, else the first description paragraph. The source patent is removed from the results | No model call needed. The fallback is printed. |
+| Search by patent | Uses the named claim, else the abstract, else the first claim, else the first description paragraph. The source patent is removed from the results | The fallback is printed. (At this point it reused the stored vector. Phase F changed it to encode the text as a query.) |
 | Filter strategy | `auto` by default, with `filter_first` and `filter_after` available as flags | See the ruling below. |
 
 ### Rulings
@@ -251,16 +251,16 @@ Would do at scale:
 
 ### Tests
 
-76 tests, about 1 second, no model download (the embedding model and translator are replaced by small fakes).
+76 tests at this point (89 by the end), about 1 second, no model download (the embedding model and translator are replaced by small fakes).
 `tests/test_missing_fields.py` deletes or empties each of 7 fields in 6 different ways (42 cases) and checks the patent is
 still ingested, still found, and shown as `Unknown`. Further tests cover each filter with and without `--include-unknown`.
 
 ### Shortcuts and weaknesses
 
-- Search by patent reuses vectors that were embedded as passages. The model was trained with separate "query" and
-  "passage" prefixes, so this is slightly off the intended use. Not measured.
-- A non-English query gets no help from the keyword side, which only knows English words. Hybrid search then leans on the
-  semantic ranking alone.
+- Search by patent reused vectors that were embedded as passages, slightly off the model's intended use. Changed in
+  Phase F: the text is now encoded as a query.
+- A non-English query got no help from the keyword side, which only knows English words. Changed in Phase F: the query
+  is translated to English first.
 - The fusion constant (60) and the title weight (2) are defaults, not tuned.
 - Ranking quality on English is not evaluated here beyond the known-item test in Phase F.
 - Keyword ranking sends every query word to the full text index. Fine at this size.
@@ -270,7 +270,7 @@ still ingested, still found, and shown as `Unknown`. Further tests cover each fi
 
 ## Phase D: scale design (`docs/scale_design.md`)
 
-Written by a separate agent from the measured numbers above, then checked by me line by line. I recomputed the vector
+Drafted in a separate session from the measured numbers above, then checked line by line. I recomputed the vector
 counts, byte sizes, GPU hours, translation totals and both monthly totals by hand. They add up.
 
 Headline numbers (US dollars, prices checked 16 November 2026):
@@ -298,13 +298,13 @@ Weak points, stated in the document itself:
 - **The SQL in the document was not run.** Only the proof of concept's statement was.
 - Half precision vectors and iterative index scans are designed in but have never been run in this project.
 
-**Ruling:** the agent partitioned passages by passage type rather than by classification section or language as the plan
-suggested, because that makes phase 2 purely additive. I kept it. Cost if wrong: a filter on classification section does
+**Ruling:** passages are partitioned by passage type rather than by classification section or language as the plan
+suggested, because that makes phase 2 purely additive. Language is the second level to add (see Phase F). Cost if wrong: a filter on classification section does
 not skip partitions.
 
 ## Phase E: proof of concept (`poc/`, `docker-compose.yml`)
 
-Written by a separate agent. Loads the real index into PostgreSQL with pgvector and runs the hybrid query as one SQL
+Built in a separate session. Loads the real index into PostgreSQL with pgvector and runs the hybrid query as one SQL
 statement: classification prefix, keyword match, vector ordering, best passage per patent.
 
 **What was actually run:** Docker is not installed on this machine, so the Docker path has **not** been run. The script
@@ -496,3 +496,42 @@ Search no longer depends on translating documents, only display does. That matte
   `--query-language` overrides it.
 - The first search after start loads a translation model per language (seconds).
 - Timings in this phase after the first evaluation were taken on battery in Low Power Mode.
+
+## Independent review, and what it changed
+
+After Phase F I had the code and the README reviewed by a fresh reader with no part in writing them, with one
+instruction: find bugs, and find claims the evidence does not support. It found both. All fixes below have a test that
+failed first.
+
+Bugs fixed:
+
+| Finding | Effect before the fix | Fix |
+| --- | --- | --- |
+| A keyword filter made only of common words (`--keywords first`) was dropped | The search ran unfiltered and said nothing | The filter now uses every word. Only keyword *ranking* ignores common words |
+| Dates were compared as raw text | `--from 2024-6-1` or `06/01/2024` silently gave wrong results | Dates must parse as ISO dates, otherwise an error |
+| `--types` was silently ignored in keyword only and filters only searches | The abstract was shown as evidence whatever was asked | Refused with an error where it cannot apply |
+| Placeholder document numbers could collide | Two numberless records in files of the same name in different folders: the second was skipped | The placeholder includes the collection and the folder |
+| A translation model that failed to load was treated as "translated" | Foreign text was stored as the English title, and keyword search on it was silently broken | Stored as "no English version", counted in the ingest report, labelled when shown |
+| Search by patent counted itself | "840 patents passed the filters" where 839 did | Counted correctly |
+| The evaluation's "not cached" timing | True only on the first run against an index | Measured straight on the models, never through the cache |
+
+Not changed, by decision:
+- **Ruling: `--types description` does not return patents that have no description, even with `--include-unknown`.**
+  The passage type option restricts what may be shown as evidence. Returning a patent with other evidence would break
+  what was asked. The README now says this option is not a field filter. Cost if wrong: a user who wants "description
+  matches, plus anything whose description is unknown" has to run two searches.
+
+Claims corrected in the README and DECISIONS (the measurements were right, the sentences were too strong):
+- "Not one of 200 foreign targets reached the first ten" is true for semantic search on the shared space. With keywords
+  fused in, 19 of 200 did.
+- "Filtering first helps more as the corpus grows" holds for very selective filters (under about 3% kept). For a filter
+  keeping 11% the advantage shrank at a million vectors, and at 19% it reversed.
+- "Removing the sort made every query 5 times faster" was the scoring step (7.5 ms to 1.4 ms). The whole call went from
+  about 22 ms to about 16 ms, because encoding the query dominates.
+- "The model scores unrelated English passages above a translation" is true for 27.5% of pairs (German) and 76.2%
+  (Chinese), not on average for German.
+- The foreign query test is the least flattering one, but it is still a round trip of the patent's own claim.
+- Counts refreshed after the cancelled claim fix: 3,223 inferred claim numbers (not 3,225), 206 passages too short to
+  embed (not 246).
+- On this test, keyword only search is as good as or better than hybrid for English (0.964 against 0.945). The
+  description and abstract of a patent repeat the words of its claim, which suits keywords. Hybrid is not tuned.

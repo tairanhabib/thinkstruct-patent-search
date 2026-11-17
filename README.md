@@ -59,6 +59,8 @@ python -m pytest
 - `benchmark.py` takes about 3 minutes, needs about 3 GB of free memory, and rewrites `benchmarks.md`. Run it before
   Part 3, so it measures the English index alone.
 - The tests need no model and take about 1 second.
+- Dates are ISO dates (`2024-06-01`). A query in Latin letters shorter than 40 letters is treated as English;
+  `--query-language de` overrides that. Chinese, Japanese and Korean queries are recognised by their script.
 - From Python: `from src.search import Index, search`, then `search("...", cpc_prefix="B60B", index=Index())`.
 
 ### Part 3: foreign patents
@@ -104,7 +106,8 @@ python poc/load_and_query.py --pgserver /tmp/patent-poc-pgdata
 ```
 
 I only ran the second form. Docker is not installed on my machine, so the Docker path is written but untested.
-See [poc/README.md](poc/README.md).
+The numbers in [poc/README.md](poc/README.md) were measured with the 640 English patents loaded. Run after Part 3, the
+script loads all 840.
 
 ## 3. How it works
 
@@ -118,7 +121,7 @@ A picture of the whole project is in [docs/architecture.md](docs/architecture.md
 | Translate at ingest | Title and abstract only, foreign patents only, so English keyword search works | `src/translate.py` |
 | Embed | Every passage in its original language, one multilingual model, long passages in windows | `src/embed.py` |
 | Store | SQLite (tables, full text index, translation cache) plus one NumPy array of vectors | `src/db.py` |
-| Filter | In SQL, on indexed columns, before any vector is touched | `src/search.py` |
+| Filter | In SQL, before vectors are scored. Classification, keywords, dates and language use indexes; "title contains" is a scan | `src/search.py` |
 | Translate the query | Into each language that survived the filters. Short, cached | `src/search.py` |
 | Semantic ranking | Each passage scored against the query in its own language, best passage per patent | `src/search.py` |
 | Keyword ranking | BM25 over English title and abstract | `src/search.py` |
@@ -143,7 +146,7 @@ The provided files differ from the task sheet, and handling that was a real part
 - Field names are `title`, `doc_number`, `abstract`, `detailed_description`, `claims`, `bibtex`, `classification`,
   `filename`. Both naming styles are accepted.
 - **119 of 640 patents have an empty description** (a list holding one empty string).
-- **3,225 claims have no number and no opening words.** Where a claim was written with nested elements, the source kept
+- **3,223 claims have no number and no opening words.** Where a claim was written with nested elements, the source kept
   only the body ("an axle body, having a middle segment ...") and lost "1 . A spoke, comprising:". This happens at any
   position, not only claim 1. In 1,300 of 1,335 places where it can be checked, the count of such claims equals the gap
   in the numbering, so each gets "previous number plus one", and the output marks the number as inferred. The patent
@@ -163,14 +166,17 @@ The provided files differ from the task sheet, and handling that was a real part
 | A field has no usable content (key absent, null, empty, whitespace, empty list, list of empty strings) | Stored as missing, listed in `patents.missing_fields`, displayed as `Unknown`. The patent is searched through the text it does have |
 | A filter is on a field the patent is missing | The patent is left out of that search. `--include-unknown` lets it through, because "not known" is not "no" |
 | No such filter is used | The patent is searched like any other |
-| No document number | Kept under a labelled placeholder, `NO-NUMBER-<file>-<position>` |
+| No document number | Kept under a labelled placeholder, `NO-NUMBER-<collection>/<file>-<position>` |
 | No text at all | Kept and counted in the ingest report. It can be shown, and cannot match a query |
 | No claims, and the user asks for patents similar to claim 1 | Falls back to the abstract and says so |
 | A file is not valid JSON, or a record is not a dictionary | Counted and skipped. The rest of the batch continues |
+| A foreign patent in a language with no translation model | Kept and searched in its own language. Stored with no English title or abstract, counted in the ingest report, and labelled "not translated" when shown |
 
 The real data only has one kind of missing field (the 119 empty descriptions). So the tests delete or empty each of
 7 fields in 6 different ways (42 cases) on synthetic records and check that the patent is still ingested, still found,
-and printed with `Unknown`. More tests cover every filter with and without `--include-unknown`.
+and printed with `Unknown`. More tests cover the classification, keyword, title, date and language filters with and
+without `--include-unknown`. The passage type option is not a field filter: it restricts which passages may be shown as
+evidence, so a patent with no description cannot appear when only descriptions are asked for.
 
 ## 5. Timing with and without hybrid search
 
@@ -214,13 +220,13 @@ What I take from this:
 4. **The biggest win was not about filters.** My first version sorted every passage score to find the best passage per
    patent. Replacing the sort with one pass per patent made every query about 5 times faster (7.5 ms to 1.4 ms).
 
-Done to make it efficient: vectors normalized at ingest, filters on indexed columns before scoring, one pass instead of
-a sort, the adaptive strategy, cached translations, the query translated only into languages that survive the filters.
+Done to make it efficient: vectors normalized at ingest, filters in SQL before scoring, one pass instead of a sort, the
+adaptive strategy, cached translations, the query translated only into languages that survive the filters.
 
 Would do at scale: cache query vectors, store vectors in 16 bits, keep rows partitioned by language and classification
 section so a common filter is a contiguous block with no copy, and use an approximate index only when the filtered set is
 large. The proof of concept shows why that last rule is needed: forced onto PostgreSQL's approximate index with a filter
-that 12 patents pass, the query returned 6 of the 10 right answers.
+that 12 patents pass, the query returned 6 of the 10 right answers (the "filtered approximate search" problem).
 
 ## 6. Part 2: the same engine for 10 million patents
 
@@ -237,7 +243,8 @@ pipelines, error handling, tracking, cost with every step of the arithmetic, cha
   most of the monthly total and are marked as unverified in the document.
 - **Proof of concept:** [poc/](poc/README.md) loads the real index into PostgreSQL and runs classification prefix,
   keyword match and vector ordering as one statement. It returns the same 10 patents in the same order as the Python
-  search. It also reproduces the main challenge at scale on 640 patents (item 4 above).
+  search. It also reproduces the main challenge at scale on 640 patents: a selective filter on an approximate index
+  silently returns too few results.
 
 ## 7. Part 3: machine translation, and why
 
@@ -334,9 +341,13 @@ German and comes back as "Speaker". The Chinese model wrote "claim" as a claim f
 - Part 3 is evaluated on machine translated patents. The real sample is still needed.
 - A Chinese query against English patents is measurably worse than an English one.
 - Ranking quality in English is only tested by the find-the-same-patent test. There are no relevance judgements.
-- A language with no translation model falls back to the shared space, which is the thing shown not to work.
+- A language with no translation model falls back to the shared space, which is the thing shown not to work. A network
+  failure while loading a model looks the same as "no model"; the ingest report counts such patents, and fixing it means
+  rebuilding the index.
 - Language is detected once per patent. A patent with an English abstract and foreign claims would be labelled English.
-- Translation at ingest runs one patent at a time (448 characters per second; the same models did 6,000 in bulk).
+- Translation at ingest runs one patent at a time and is slow (448 characters per second into English at beam width 4).
+  Bulk translation in the other direction with greedy decoding ran at 6,000 to 7,000; about a factor of 5 of that is the
+  beam width, the rest is batching.
 - Every command line call loads the model again (about 10 seconds). A long-running service would not.
 - The inferred claim numbers can be wrong in the 35 places where the count does not match the numbering gap.
 - The scale design's SQL was not run, apart from the one statement in the proof of concept. The Docker path was not run.
@@ -359,7 +370,7 @@ German and comes back as "Speaker". The Chinese model wrote "claim" as a claim f
 | `cli.py` | Command line: `ingest`, `search`, `similar`, `show`, `stats` |
 | `src/` | `db.py`, `ingest.py`, `embed.py`, `translate.py`, `search.py` |
 | `scripts/` | `inspect_data.py`, `benchmark.py`, `make_parallel_set.py`, `evaluate_multilingual.py`, `compare_models.py` |
-| `tests/` | 82 tests, no model needed |
+| `tests/` | 89 tests, no model needed |
 | `benchmarks.md`, `eval_results.md` | Generated tables |
 | `docs/scale_design.md`, `docs/architecture.md` | Part 2 design, project diagram |
 | `poc/`, `docker-compose.yml` | Part 2 proof of concept |
