@@ -1,0 +1,14 @@
+# PostgreSQL 16 with the pgvector extension, for poc/load_and_query.py.
+# Development only: fixed password, no volume (the script reloads everything on every run).
+services:
+  db:
+    image: pgvector/pgvector:0.8.7-pg16
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"  # 5433 on the host, so it does not clash with a local Postgres
+    healthcheck:  # lets `docker compose up -d --wait` return only when the database accepts connections
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 2s
+      retries: 30

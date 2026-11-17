@@ -1,0 +1,3 @@
+psycopg[binary]==3.3.9
+# only for the run without Docker (--pgserver): PostgreSQL 16.2 binaries with pgvector 0.6.2 inside a wheel
+pgserver==0.1.4
