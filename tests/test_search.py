@@ -183,3 +183,41 @@ def test_short_english_queries_are_not_mistaken_for_another_language():
         assert query_language(query) == "en"
     assert query_language("Luftreifen mit einem Laufstreifen, der in Umfangsrichtung verlaufende Rillen aufweist") == "de"
     assert query_language("一种具有周向沟槽的充气轮胎") == "zh"
+
+
+def test_keyword_filter_made_of_common_words_still_filters(build_index):
+    index, _ = build_index([COMPLETE, OTHER])
+    assert docs(search("tire", keywords="the", index=index)) == ["D-COMPLETE"]  # only that abstract contains "the"
+    assert docs(search(keywords="the", index=index)) == ["D-COMPLETE"]
+
+
+def test_passage_types_need_a_semantic_search(build_index):
+    index, _ = build_index([COMPLETE, OTHER])
+    with pytest.raises(ValueError):
+        search(keywords="sensor", passage_types=["claim"], index=index)
+    with pytest.raises(ValueError):
+        search("pressure sensor", mode="keyword", passage_types=["claim"], index=index)
+
+
+def test_dates_must_be_iso_dates(build_index):
+    index, _ = build_index([COMPLETE, OTHER])
+    for bad in ("2024-6-1", "06/01/2024", "last week"):
+        with pytest.raises(ValueError):
+            search("tire", date_from=bad, index=index)
+        with pytest.raises(ValueError):
+            search("tire", date_to=bad, index=index)
+
+
+def test_search_by_patent_counts_the_other_patents_only(build_index):
+    index, _ = build_index([COMPLETE, OTHER])
+    info = {}
+    search(doc_number="D-COMPLETE", index=index, info=info)
+    assert info["patents_passing_filters"] == 1
+
+
+def test_translated_title_is_what_keyword_search_reads(build_index, monkeypatch):
+    monkeypatch.setattr(translate, "translate_texts",
+                        lambda texts, source, target="en", beams=4: ["wheel hub with pressure sensor" for _ in texts])
+    index, _ = build_index([GERMAN, OTHER])
+    assert docs(search(keywords="sensor", index=index)) == ["D-GERMAN"]  # the English word is only in the translation
+    assert search(keywords="Drucksensor", index=index) == []  # the German word is not indexed for keywords

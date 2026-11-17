@@ -54,9 +54,15 @@ def _engine(source, target):
             _engines[name] = (MarianTokenizer.from_pretrained(name),
                               MarianMTModel.from_pretrained(name).eval().to(device), device)
         except Exception as error:  # no model for this pair, or no network on first use
-            print(f"no translation model {name}: {type(error).__name__}")
+            print(f"no translation model {name} ({type(error).__name__}: {str(error).splitlines()[0][:120]})")
             _engines[name] = None
     return name, _engines[name]
+
+
+def available(source, target="en"):
+    """Whether a translation model for this language pair exists and could be loaded.
+    shortcut: a network failure on first use looks the same as "no such model"; callers report it, they do not retry."""
+    return _engine(source, target)[1] is not None
 
 
 def _sentences(text, source):
@@ -104,7 +110,7 @@ def translate_many(texts, source_language, con=None, target="en", beams=4):
     table when a connection is given. Falls back to the original text when no model exists
     for the language pair."""
     texts = list(texts)
-    if source_language in (None, target):
+    if source_language in (None, target) or not available(source_language, target):
         return texts
     name = MODEL_PATTERN.format(source=source_language, target=target)
     keys = [hashlib.sha1(f"{name}\n{beams}\n{text}".encode("utf-8")).hexdigest() for text in texts]

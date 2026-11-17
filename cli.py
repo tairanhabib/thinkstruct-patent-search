@@ -35,9 +35,10 @@ def format_results(results, show_original=False):
     lines = []
     for rank, r in enumerate(results, 1):
         foreign = r["language"] not in (None, "en")
-        title = shown(r["title_en"] if foreign else r["title"])
-        lines.append(f"{rank:2d}. {r['doc_number']} | {title}" + (f"  [translated from {r['language']}]" if foreign else ""))
-        if foreign and show_original:
+        title = shown((r["title_en"] or r["title"]) if foreign else r["title"])
+        note = "" if not foreign else f"  [translated from {r['language']}]" if r["title_en"] else f"  [{r['language']}, not translated]"
+        lines.append(f"{rank:2d}. {r['doc_number']} | {title}{note}")
+        if foreign and show_original and r["title_en"]:
             lines.append(f"      original title: {shown(r['title'])}")
         scores = [f"score {r['score']:.4f}" if r["score"] is not None else "score n/a (filters only)"]
         if r["similarity"] is not None:
@@ -54,9 +55,9 @@ def format_results(results, show_original=False):
         else:
             kind = claim_label(passage["number"], passage["number_inferred"], passage["parent_claim"]) \
                 if passage["kind"] == "claim" else passage["kind"] + (f" paragraph {passage['number']}" if passage["kind"] == "description" else "")
-            lines.append(f"      Evidence, {kind}" + (", machine translated:" if foreign else ":"))
+            lines.append(f"      Evidence, {kind}" + (", machine translated:" if passage["translated"] else ":"))
             lines.append(wrap(passage["text_en"], "        ", 600))
-            if foreign and show_original:
+            if passage["translated"] and show_original:
                 lines.append("        original:")
                 lines.append(wrap(passage["text"], "        ", 600))
         lines.append("")
@@ -70,7 +71,8 @@ def format_patent(index, doc_number, show_original=False, full=False):
     if patent is None:
         return f"No patent with document number {doc_number!r} in the index."
     language = patent["language"]
-    foreign = language not in (None, "en")
+    foreign = language not in (None, "en") and translate.available(language)  # foreign, and we can show it in English
+    untranslated = language not in (None, "en") and not foreign
     passages = con.execute("SELECT * FROM passages WHERE patent_id = ? ORDER BY kind, ord, id", (patent["id"],)).fetchall()
     claims = [p for p in passages if p["kind"] == "claim"]
     paragraphs = [p for p in passages if p["kind"] == "description"]
@@ -86,9 +88,10 @@ def format_patent(index, doc_number, show_original=False, full=False):
 
     lines = [
         f"Document number: {patent['doc_number']}",
-        f"Title: {shown(patent['title_en'] if foreign else patent['title'])}",
+        f"Title: {shown((patent['title_en'] or patent['title']) if foreign else patent['title'])}",
         *([f"  original: {patent['title']}"] if foreign and show_original and patent["title"] else []),
-        f"Language: {shown(language)}" + (" (shown in English, machine translated)" if foreign else ""),
+        f"Language: {shown(language)}" + (" (shown in English, machine translated)" if foreign else "")
+        + (" (no English translation available, shown in the original language)" if untranslated else ""),
         f"Classification: {shown(patent['classification'])}",
         f"Filing week: {shown(patent['filing_week'])}",
         f"Source file: {shown(patent['filename'])}",

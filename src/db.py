@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS patents (
     language TEXT,                 -- detected; NULL means could not tell
     missing_fields TEXT NOT NULL DEFAULT ''
 );
+CREATE INDEX IF NOT EXISTS idx_patents_filing_week ON patents(filing_week);
+CREATE INDEX IF NOT EXISTS idx_patents_language ON patents(language);
 CREATE TABLE IF NOT EXISTS classifications (
     patent_id INTEGER NOT NULL,
     code TEXT NOT NULL,            -- upper case, letters and digits only, for prefix lookups

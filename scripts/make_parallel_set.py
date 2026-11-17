@@ -67,7 +67,10 @@ def translate_patents(patents, language, beams):
                 want(claim, copy["claims"], i)
         for i, paragraph in enumerate(patent["detailed_description"]):
             want(paragraph, copy["detailed_description"], i)
-    for (target, key, prefix), text in zip(slots, translate_texts(texts, "en", language, beams=beams)):
+    translated = translate_texts(texts, "en", language, beams=beams)
+    if translated is None:
+        raise SystemExit(f"no translation model for English to {language!r}: check the language code and the network")
+    for (target, key, prefix), text in zip(slots, translated):
         target[key] = prefix + text
     return copies, sum(map(len, texts))
 

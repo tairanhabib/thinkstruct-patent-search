@@ -118,11 +118,14 @@ def insert_patent(con, patent, collection):
     sample = (patent["abstract"] or (patent["claims"][0]["text"] if patent["claims"] else None)
               or " ".join(patent["description"][:3]) or patent["title"])
     language = translate.detect_language(sample)
-    title_en, abstract_en = patent["title"], patent["abstract"]
+    title_en, abstract_en, untranslated = patent["title"], patent["abstract"], False
     if language and language != "en":
-        # Only these two short fields are translated at ingest, so keyword search works in English.
-        title_en = translate.translate(patent["title"], language, con) if patent["title"] else None
-        abstract_en = translate.translate(patent["abstract"], language, con) if patent["abstract"] else None
+        if translate.available(language):
+            # Only these two short fields are translated at ingest, so keyword search works in English.
+            title_en = translate.translate(patent["title"], language, con) if patent["title"] else None
+            abstract_en = translate.translate(patent["abstract"], language, con) if patent["abstract"] else None
+        else:  # no model for this language: say "no English version" rather than store foreign text as English
+            title_en, abstract_en, untranslated = None, None, True
     patent_id = con.execute(
         "INSERT INTO patents (doc_number, collection, title, title_en, abstract, abstract_en, classification,"
         " bibtex, filename, filing_week, language, missing_fields) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -137,7 +140,7 @@ def insert_patent(con, patent, collection):
     rows += [(patent_id, "description", i + 1, 0, None, text) for i, text in enumerate(patent["description"])]
     con.executemany(
         "INSERT INTO passages (patent_id, kind, ord, number_inferred, parent_claim, text) VALUES (?,?,?,?,?,?)", rows)
-    return language
+    return language, untranslated
 
 
 def ingest_dir(data_dir, index_dir=None, collection=None):
@@ -164,14 +167,16 @@ def ingest_dir(data_dir, index_dir=None, collection=None):
                 continue
             patent = normalize(raw, os.path.basename(path))
             if not patent["doc_number"]:
-                # Keep it findable: a made-up, clearly labelled identifier.
-                patent["doc_number"] = f"NO-NUMBER-{os.path.basename(path)}-{position}"
+                # Keep it findable: a made-up, clearly labelled identifier, unique across folders and collections.
+                patent["doc_number"] = f"NO-NUMBER-{collection}/{os.path.relpath(path, data_dir)}-{position}"
             if patent["doc_number"] in known:
                 stats["already_indexed"] += 1
                 continue
             known.add(patent["doc_number"])
-            language = insert_patent(con, patent, collection)
+            language, untranslated = insert_patent(con, patent, collection)
             stats["patents"] += 1
+            if untranslated:
+                stats["patents_not_translated"] += 1
             stats[f"language_{language or 'unknown'}"] += 1
             for name in patent["missing"]:
                 stats[f"missing_{name}"] += 1

@@ -4,11 +4,14 @@ Policy: a patent is never dropped. A missing field is stored as NULL, listed in
 `missing_fields`, shown as "Unknown", and makes the patent fail a filter on that field
 only when that filter is used, unless include_unknown is set.
 """
+import json
+
 import pytest
 
 import cli
 from conftest import COMPLETE, OTHER, without
-from src.search import search
+from src import ingest, translate
+from src.search import Index, search
 
 FIELDS = ["title", "abstract", "detailed_description", "claims", "classification", "bibtex", "filename"]
 EMPTY_VALUES = {"deleted": None, "null": [None], "empty string": [""], "whitespace": ["   "], "empty list": [[]],
@@ -105,7 +108,7 @@ def test_patent_with_only_a_title_is_kept_and_found_by_keyword(build_index):
         results = search("levitation wheel", mode=mode, index=index)
         assert "D-TITLE" in docs(results)
     title_only = next(r for r in results if r["doc_number"] == "D-TITLE")
-    assert title_only["passage"] is None and "Evidence: Unknown" not in cli.format_results([title_only])
+    assert title_only["passage"] is None and "Evidence: no passage" in cli.format_results([title_only])
 
 
 def test_patent_with_nothing_but_a_number_is_stored_and_counted(build_index):
@@ -128,3 +131,25 @@ def test_a_broken_file_and_a_broken_record_do_not_stop_the_batch(build_index, tm
     (tmp_path / "data" / "patents_ipa240101.json").write_text("{ this is not json", encoding="utf-8")
     index, stats = build_index([COMPLETE, "not a dictionary", OTHER])
     assert stats["files_failed"] == 1 and stats["records_not_a_dictionary"] == 1 and stats["patents"] == 2
+
+
+def test_two_numberless_patents_in_files_of_the_same_name_are_both_kept(tmp_path):
+    for folder in ("de", "zh"):
+        (tmp_path / "data" / folder).mkdir(parents=True)
+        record = without(COMPLETE, "doc_number", title=f"Wheel hub from the {folder} folder")
+        (tmp_path / "data" / folder / "patents_ipa240215.json").write_text(json.dumps([record]), encoding="utf-8")
+    stats = ingest.ingest_dir(str(tmp_path / "data"), str(tmp_path / "index"))
+    assert stats["patents"] == 2 and "already_indexed" not in stats
+    assert len(Index(str(tmp_path / "index")).patent_ids) == 2
+
+
+def test_a_foreign_patent_that_could_not_be_translated_is_kept_and_reported(build_index, monkeypatch):
+    monkeypatch.setattr(translate, "available", lambda source, target="en": False)
+    german = without(COMPLETE, doc_number="D-GERMAN", title="Radnabe mit Drucksensor",
+                     abstract="Eine Radnabe mit einem Reifendrucksensor, der den Fülldruck des Reifens an den Fahrer meldet.")
+    index, stats = build_index([german, OTHER])
+    assert stats["patents"] == 2 and stats["patents_not_translated"] == 1
+    row = index.con.execute("SELECT title, title_en, abstract_en FROM patents WHERE doc_number = 'D-GERMAN'").fetchone()
+    assert row["title"] == "Radnabe mit Drucksensor" and row["title_en"] is None and row["abstract_en"] is None
+    shown = cli.format_patent(index, "D-GERMAN")
+    assert "Title: Radnabe mit Drucksensor" in shown and "no English translation available" in shown

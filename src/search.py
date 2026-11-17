@@ -5,6 +5,7 @@ the keyword ranking and the semantic ranking with reciprocal rank fusion.
     index = Index()
     hits = search("wheel hub with integrated pressure sensor", cpc_prefix="B60B", index=index)
 """
+import datetime
 import re
 import time
 
@@ -42,6 +43,8 @@ class Index:
         self.vector_kind = kind_of[self.vector_passage]
         self.patent_ids = {doc: patent_id for doc, patent_id in self.con.execute("SELECT doc_number, id FROM patents")}
         self.table_size = max(self.patent_ids.values(), default=0) + 1
+        self.all_patents = np.zeros(self.table_size, bool)  # table over patent ids: which ids exist
+        self.all_patents[list(self.patent_ids.values())] = True
         by_patent = list(self.con.execute("SELECT id, language FROM patents"))
         self.languages = sorted({language for _, language in by_patent if language and language != "en"})
         code = np.zeros(self.table_size, np.int64)  # 0: English or unknown; i + 1: self.languages[i]
@@ -69,10 +72,11 @@ def filter_patents(index, cpc_prefix=None, keywords=None, title=None, date_from=
         has_code = "EXISTS (SELECT 1 FROM classifications c WHERE c.patent_id = p.id"
         where.append(f"({has_code} AND c.code GLOB ?){unknown('NOT ' + has_code + ')')})")
         params.append(re.sub(r"[^A-Z0-9]", "", cpc_prefix.upper()) + "*")  # 'b60b 1/04' and 'B60B104' both work
-    if keywords and _terms(keywords):
+    words = re.findall(r"\w+", (keywords or "").lower())  # every word counts here, common ones too
+    if words:
         where.append("(p.id IN (SELECT rowid FROM patents_fts WHERE patents_fts MATCH ?)"
                      f"{unknown('p.title IS NULL OR p.abstract IS NULL')})")
-        params.append(" AND ".join(f'"{term}"' for term in _terms(keywords)))  # every keyword must appear
+        params.append(" AND ".join(f'"{word}"' for word in words))  # every keyword must appear
     if title:
         pattern = "%" + re.sub(r"([\\%_])", r"\\\1", title.strip()) + "%"
         where.append(f"(p.title LIKE ? ESCAPE '\\' OR p.title_en LIKE ? ESCAPE '\\'{unknown('p.title IS NULL')})")
@@ -93,7 +97,7 @@ def filter_patents(index, cpc_prefix=None, keywords=None, title=None, date_from=
         ids = [row[0] for row in index.con.execute("SELECT p.id FROM patents p WHERE " + " AND ".join(where), params)]
         allowed[ids] = True
     else:
-        allowed[:] = True
+        allowed = index.all_patents.copy()
     if restrict_docs is not None:  # used by the evaluation to build a candidate set
         inside = np.zeros(index.table_size, bool)
         inside[[index.patent_ids[doc] for doc in restrict_docs if doc in index.patent_ids]] = True
@@ -210,6 +214,14 @@ def search(query=None, doc_number=None, claim_number=None, top_k=10, cpc_prefix=
         raise ValueError(f"mode must be one of {MODES}")
     if cross_lingual not in CROSS_LINGUAL:
         raise ValueError(f"cross_lingual must be one of {CROSS_LINGUAL}")
+    if passage_types and (mode == "keyword" or not (query or doc_number)):
+        # keyword search reads title and abstract only, so it cannot honour a passage type
+        raise ValueError("passage types need a semantic or hybrid search with a query or a document number")
+    try:  # dates are compared as text, so they must be real ISO dates
+        date_from = datetime.date.fromisoformat(date_from).isoformat() if date_from else None
+        date_to = datetime.date.fromisoformat(date_to).isoformat() if date_to else None
+    except ValueError:
+        raise ValueError("dates must look like 2024-06-01") from None
     for kind in passage_types or ():
         if kind not in KINDS:
             raise ValueError(f"passage type must be one of {KINDS}")
@@ -242,7 +254,7 @@ def search(query=None, doc_number=None, claim_number=None, top_k=10, cpc_prefix=
     allowed = filter_patents(index, cpc_prefix, keywords, title, date_from, date_to, language, include_unknown,
                              restrict_docs)
     if source_id is not None:  # a patent is not its own prior art
-        allowed = np.ones(index.table_size, bool) if allowed is None else allowed
+        allowed = index.all_patents.copy() if allowed is None else allowed
         allowed[source_id] = False
     info["patents_passing_filters"] = len(index.patent_ids) if allowed is None else int(allowed.sum())
     lap("filter")
@@ -324,15 +336,17 @@ def search(query=None, doc_number=None, claim_number=None, top_k=10, cpc_prefix=
             "keyword_rank": keyword_position.get(patent_id),
             "passage": None if passage is None else {
                 "kind": passage["kind"], "number": passage["ord"], "number_inferred": bool(passage["number_inferred"]),
-                "parent_claim": passage["parent_claim"], "text": passage["text"], "text_en": passage["text"]},
+                "parent_claim": passage["parent_claim"], "text": passage["text"], "text_en": passage["text"],
+                "translated": False},
         })
     lap("fetch")
 
     # 8. English for anything that is not English, on demand and cached
     if translate_results:
         for result in results:
-            if result["passage"] and result["language"] not in (None, "en"):
+            if result["passage"] and result["language"] not in (None, "en") and translate.available(result["language"]):
                 result["passage"]["text_en"] = translate.translate(result["passage"]["text"], result["language"], index.con)
+                result["passage"]["translated"] = True
     lap("translate")
     info["ms"] = {name: round(value, 3) for name, value in ms.items()}
     info["ms"]["total"] = round(sum(ms.values()), 3)

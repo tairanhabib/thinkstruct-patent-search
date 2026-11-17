@@ -35,21 +35,23 @@ flowchart TD
     subgraph SRCH["Search: python cli.py search / similar / show"]
         q["query text in any language<br/>or document number and claim<br/>or filters only"]
         filt["1. filters in SQL<br/>classification prefix, keywords, title,<br/>dates, language, passage type"]
-        sem["2. score surviving vectors<br/>best passage per patent"]
-        kw["3. keyword ranking (BM25)<br/>English title and abstract"]
-        rrf["4. reciprocal rank fusion"]
-        show["5. show in English<br/>translate displayed passages on demand, cache"]
-        q --> filt --> sem --> rrf --> show
-        filt --> kw --> rrf
+        tq["2. translate the query<br/>into each language that survived<br/>(short, cached)"]
+        sem["3. score each passage against the query<br/>in its own language<br/>best passage per patent"]
+        kw["4. keyword ranking (BM25)<br/>English title and abstract"]
+        rrf["5. reciprocal rank fusion"]
+        show["6. show in English<br/>translate displayed passages on demand, cache"]
+        q --> filt --> tq --> sem --> rrf --> show
+        tq --> kw --> rrf
     end
     db --> filt
     db --> kw
     vec --> sem
     show <--> db
+    tq <--> db
 
     subgraph MEAS["Measurement"]
         bench["scripts/benchmark.py<br/>benchmarks.md"]
-        evalm["scripts/evaluate_multilingual.py<br/>eval_results.md"]
+        evalm["scripts/evaluate_multilingual.py<br/>scripts/compare_models.py<br/>eval_results.md"]
         tests["tests/<br/>missing fields, filters, claims"]
     end
     bench -.-> SRCH
@@ -73,9 +75,9 @@ flowchart TD
 | Field normalization, claim parsing, missing field handling | `src/ingest.py` |
 | Embedding model, windows, vector files | `src/embed.py` |
 | Language detection, translation, cache | `src/translate.py` |
-| Filters, ranking, fusion | `src/search.py` |
+| Filters, query translation, ranking, fusion | `src/search.py` |
 | Command line and display | `cli.py` |
 | Timing | `scripts/benchmark.py` |
 | Synthetic German and Chinese set | `scripts/make_parallel_set.py` |
-| English against foreign comparison | `scripts/evaluate_multilingual.py` |
+| English against foreign comparison | `scripts/evaluate_multilingual.py`, `scripts/compare_models.py` |
 | Scale design and its proof of concept | `docs/scale_design.md`, `poc/` |

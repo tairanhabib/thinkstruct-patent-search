@@ -24,7 +24,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src import embed, translate  # noqa: E402
-from src.search import QUERY_BEAMS, Index, query_language, query_versions, search  # noqa: E402
+from src.search import QUERY_BEAMS, Index, query_language, search  # noqa: E402
 
 NAMES = {"en": "English", "de": "German", "zh": "Chinese"}
 METHODS = (("keyword", "shared", "keyword only"), ("semantic", "shared", "semantic, shared space"),
@@ -109,8 +109,9 @@ def main():
            "translated into that passage's language (the default in `search()`).\n",
            "**Read the \"query translated\" rows for German and Chinese as an upper bound.** The German and Chinese copies were "
            "produced by the same opus-mt models that then translate the query, so query and document share wording more than "
-           "they would with real foreign patents. The \"Foreign query, English patents\" table further down does not have this "
-           "problem: there the documents are the original human-written English.\n"]
+           "they would with real foreign patents. The \"Foreign query, English patents\" table further down is less affected: "
+           "there the documents are the original human-written English, though the query is still a machine translation "
+           "of that same patent's claim.\n"]
 
     settings = [
         ("Alone", f"Candidates are only the {len(originals)} test patents in one language.",
@@ -120,11 +121,15 @@ def main():
          "This is the setting that matters for a real mixed corpus.",
          lambda language: list(copies[language].values()) + distractors),
     ]
-    # What one query costs when nothing is cached: the first 10 queries, one at a time, as a user would send them.
+    # What one query costs when nothing is cached: 10 queries, one at a time, sent straight to the models
+    # (never through the cache, so this is the same on a first run and on a repeat run).
     uncached, cached = [], []
+    for language in index.languages:
+        translate.translate_texts(["warm up"], "en", language, beams=QUERY_BEAMS)  # model loading is not part of the number
     for query in queries[:10]:
         start = time.perf_counter()
-        query_versions(index, query, "en", index.languages)
+        for language in index.languages:
+            translate.translate_texts([query], "en", language, beams=QUERY_BEAMS)
         uncached.append((time.perf_counter() - start) * 1000)
     # Then every query in bulk, so the 4,000 searches below are cache hits. Same texts, same cache keys.
     start, before = time.perf_counter(), translate.usage["characters"]
@@ -160,26 +165,33 @@ def main():
             f"The query is the first claim of the translated copy. Candidates are all {len(english_pool)} original English "
             "patents (abstract and description). With \"query translated\" the query language is detected, the query is "
             "translated to English by a different model than the one that made the copies, and it must match the original "
-            "human-written English. This is the fairest number here.\n",
-            "| Method | Query language | Recall at 1 | Recall at 10 | MRR | Query language detected correctly |",
-            "| --- | --- | --- | --- | --- | --- |"]
+            "human-written English. This is the least flattering test here, but it is still a round trip: the query is a "
+            "machine translation of a claim of the very patent it is looking for.\n",
+            "| Method | Query language | Recall at 1 | Recall at 10 | MRR | Gap to English (MRR) | 95% interval | Query language detected |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- |"]
     for mode, method, label in METHODS[1:]:
+        baseline = None
         for language in languages:
             foreign_queries = [first_claim(index, copies[language][doc]) for doc in originals]
-            s = summarize(reciprocal_ranks(index, foreign_queries, originals, english_pool, mode, method))
+            rr = reciprocal_ranks(index, foreign_queries, originals, english_pool, mode, method)
+            baseline = rr if baseline is None else baseline
+            s = summarize(rr)
+            gap = "" if language == "en" else f"{s['mrr'] - baseline.mean():+.3f}"
+            interval = "" if language == "en" else "{:+.3f} to {:+.3f}".format(*gap_interval(rr, baseline))
             detected = sum(query_language(q) == language for q in foreign_queries)
             out.append(f"| {label} | {NAMES.get(language, language)} | {s['recall@1']:.2f} | {s['recall@10']:.2f} | {s['mrr']:.3f} "
-                       f"| {detected} of {len(foreign_queries)} |")
+                       f"| {gap} | {interval} | {detected} of {len(foreign_queries)} |")
             print("Foreign query", out[-1], flush=True)
 
     out += ["\n## What query translation costs per query\n",
             f"Translating one claim-length query (median {int(np.median([len(q) for q in queries]))} characters) into "
             f"{len(index.languages)} languages ({', '.join(index.languages)}) with greedy decoding:\n",
             "| | Median | Slowest |", "| --- | --- | --- |",
-            f"| First time, not cached (the first 10 queries, one at a time) | {np.median(uncached):.0f} ms | {max(uncached):.0f} ms |",
-            f"| Repeated, cached (all later searches) | {np.median(cached):.2f} ms | {max(cached):.2f} ms |",
-            f"\nThe remaining queries were translated in bulk before the tables above were computed: {bulk[0]:,} characters "
-            f"in {bulk[1]:.0f} s ({bulk[0] / bulk[1]:,.0f} characters per second)."]
+            f"| Not cached, models already loaded (10 queries, one at a time) | {np.median(uncached):.0f} ms | {max(uncached):.0f} ms |",
+            f"| Cache hit: the translation step inside `search()` in the tables above | {np.median(cached):.2f} ms | {max(cached):.2f} ms |",
+            ("\nAll queries were translated in bulk before the tables above were computed: "
+             + (f"{bulk[0]:,} characters in {bulk[1]:.0f} s ({bulk[0] / bulk[1]:,.0f} characters per second)." if bulk[0]
+                else "they were already in the cache from an earlier run, so no bulk rate was measured this time."))]
 
     # why the shared space fails: same patent across languages against different patents in the same language
     english = abstract_vectors(index, originals)

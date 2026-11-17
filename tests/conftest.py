@@ -50,6 +50,7 @@ def offline_models(monkeypatch):
     monkeypatch.setattr(embed, "count_truncated", lambda texts, prefix: 0)
     monkeypatch.setattr(translate, "translate_texts",
                         lambda texts, source, target="en", beams=4: [f"[{source} to {target}] {text}" for text in texts])
+    monkeypatch.setattr(translate, "available", lambda source, target="en": True, raising=False)
 
 
 @pytest.fixture
