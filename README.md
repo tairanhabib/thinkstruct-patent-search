@@ -35,6 +35,10 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+If a command below fails with `ModuleNotFoundError`, your shell is probably running a different Python: an alias such
+as `alias python=/usr/bin/python3` wins over the virtual environment. `which python` should end in `.venv/bin/python`.
+If it does not, run `unalias python`, or type `python3` instead of `python` in the commands below.
+
 Put the 64 `patents_ipa*.json` files from the provided archive in `data/small/`:
 
 ```bash
