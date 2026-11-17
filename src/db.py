@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS passages (
 );
 CREATE INDEX IF NOT EXISTS idx_passages_patent ON passages(patent_id);
 CREATE VIRTUAL TABLE IF NOT EXISTS patents_fts USING fts5(title_en, abstract_en, tokenize='porter unicode61');
+-- cache; `text_en` holds the translation (into English, or into the model's target for translated queries)
 CREATE TABLE IF NOT EXISTS translations (key TEXT PRIMARY KEY, model TEXT NOT NULL, text_en TEXT NOT NULL);
 """
 

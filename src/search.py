@@ -14,6 +14,8 @@ from . import db, embed, translate
 
 KINDS = ("abstract", "claim", "description")
 MODES = ("hybrid", "semantic", "keyword")
+CROSS_LINGUAL = ("translate_query", "shared")
+QUERY_BEAMS = 1  # greedy decoding for queries: measured about 3 to 5 times faster than beam width 4
 RRF_K = 60  # the usual constant: it flattens the difference between neighbouring ranks
 AUTO_THRESHOLD = 0.15  # share of rows kept below which filter first wins; measured, see benchmarks.md
 STOPWORDS = set(
@@ -40,6 +42,12 @@ class Index:
         self.vector_kind = kind_of[self.vector_passage]
         self.patent_ids = {doc: patent_id for doc, patent_id in self.con.execute("SELECT doc_number, id FROM patents")}
         self.table_size = max(self.patent_ids.values(), default=0) + 1
+        by_patent = list(self.con.execute("SELECT id, language FROM patents"))
+        self.languages = sorted({language for _, language in by_patent if language and language != "en"})
+        code = np.zeros(self.table_size, np.int64)  # 0: English or unknown; i + 1: self.languages[i]
+        for patent_id, language in by_patent:
+            code[patent_id] = self.languages.index(language) + 1 if language in self.languages else 0
+        self.patent_language, self.vector_language = code, code[self.vector_patent]
 
 
 def _terms(text):
@@ -93,11 +101,19 @@ def filter_patents(index, cpc_prefix=None, keywords=None, title=None, date_from=
     return allowed
 
 
-def rank_patents(vectors, vector_patent, query_vector, keep=None, strategy="auto"):
+def _score(vectors, query, version):
+    if query.ndim == 1:
+        return vectors @ query
+    return (vectors @ query.T)[np.arange(len(vectors)), version]  # each row against the query in its own language
+
+
+def rank_patents(vectors, vector_patent, query_vector, keep=None, strategy="auto", version=None):
     """Best passage per patent, best patent first.
 
     `keep` is a boolean mask over vector rows (None means every row). Rows of one patent
     must be adjacent in `vector_patent` (Index guarantees it).
+    `query_vector` is one vector, or one vector per language with `version` saying which
+    one each row is scored against.
     - filter_first copies out the kept rows and scores only those.
     - filter_after scores every row and discards afterwards. The baseline.
     - auto picks filter_first when the filter keeps under AUTO_THRESHOLD of the rows:
@@ -105,13 +121,13 @@ def rank_patents(vectors, vector_patent, query_vector, keep=None, strategy="auto
     Returns (patent ids, vector row of each patent's best passage, scores).
     """
     if keep is None:
-        rows, scores = None, vectors @ query_vector
+        rows, scores = None, _score(vectors, query_vector, version)
     else:
         rows = np.flatnonzero(keep)
         if strategy == "filter_first" or (strategy == "auto" and len(rows) < AUTO_THRESHOLD * len(keep)):
-            scores = vectors[rows] @ query_vector
+            scores = _score(vectors[rows], query_vector, None if version is None else version[rows])
         else:
-            scores = (vectors @ query_vector)[rows]
+            scores = _score(vectors, query_vector, version)[rows]
     owners = vector_patent if rows is None else vector_patent[rows]
     if not len(owners):
         return owners, owners, scores
@@ -139,35 +155,61 @@ def keyword_rank(con, text):
         "SELECT rowid FROM patents_fts WHERE patents_fts MATCH ? ORDER BY bm25(patents_fts, 2.0, 1.0)", (match,))]
 
 
-def source_vector(index, doc_number, claim_number=None):
-    """Query vector taken from a patent already in the index: the named claim, else the
-    abstract, else the first claim, else the first description paragraph that has a vector."""
+def source_text(index, doc_number, claim_number=None):
+    """Text to search with, taken from a patent in the index: the named claim, else the abstract,
+    else the first claim, else the first description paragraph. Returns (text, language, label)."""
     if doc_number not in index.patent_ids:
         raise ValueError(f"no patent with document number {doc_number!r} in the index")
     patent_id = index.patent_ids[doc_number]
+    title, language = index.con.execute("SELECT title, language FROM patents WHERE id = ?", (patent_id,)).fetchone()
     wanted = ([("claim", claim_number)] if claim_number else []) + [("abstract", None), ("claim", None), ("description", None)]
     for kind, number in wanted:
-        sql = "SELECT id, ord FROM passages WHERE patent_id = ? AND kind = ?" + (" AND ord = ?" if number else "") + " ORDER BY ord"
-        for passage_id, number_found in index.con.execute(sql, (patent_id, kind) + ((number,) if number else ())):
-            rows = np.flatnonzero(index.vector_passage == passage_id)
-            if len(rows):
-                vector = index.vectors[rows].mean(axis=0)
-                label = "abstract" if kind == "abstract" else f"{kind} {number_found}"
-                return vector / np.linalg.norm(vector), label
-    raise ValueError(f"patent {doc_number} has no embedded text to search with")
+        sql = ("SELECT text, ord, number_inferred FROM passages WHERE patent_id = ? AND kind = ?"
+               + (" AND ord = ?" if number else "") + " ORDER BY ord")
+        for text, number_found, inferred in index.con.execute(sql, (patent_id, kind) + ((number,) if number else ())):
+            if len(text) >= embed.limits(language)[0]:  # the same rule that decides what gets embedded
+                if kind == "claim" and inferred and title:
+                    text = f"{title}: {text}"  # as at ingest: a claim without its preamble needs a subject
+                return text, language or "en", "abstract" if kind == "abstract" else f"{kind} {number_found}"
+    raise ValueError(f"patent {doc_number} has no text long enough to search with")
+
+
+def query_language(text):
+    """Language of a typed query. English unless the detector is confident, because a short
+    English phrase is easily mistaken for Dutch or Danish."""
+    return translate.detect_language(text, min_letters=40, min_probability=0.9) or "en"
+
+
+def query_versions(index, text, source, languages):
+    """The query in English and in each of `languages`: {language: text}. Passages are scored
+    against the version in their own language, so nothing depends on how well the model
+    aligns two languages. Goes through English, so one model per language is enough."""
+    english = translate.translate(text, source, index.con, beams=QUERY_BEAMS) if source != "en" else text
+    versions = {"en": english, source: text}
+    for language in languages:
+        if language not in versions:
+            versions[language] = translate.translate(english, "en", index.con, target=language, beams=QUERY_BEAMS)
+    return versions
 
 
 def search(query=None, doc_number=None, claim_number=None, top_k=10, cpc_prefix=None, keywords=None, title=None,
            date_from=None, date_to=None, language=None, passage_types=None, include_unknown=False, mode="hybrid",
-           strategy="auto", restrict_docs=None, translate_results=True, index=None, info=None):
+           strategy="auto", restrict_docs=None, translate_results=True, cross_lingual="translate_query",
+           query_lang=None, index=None, info=None):
     """Ranked patents, each with its best matching passage as evidence.
 
     Give a `query` in any language, or a `doc_number` (optionally with `claim_number`) to
     find patents like one already indexed, or only filters to list what matches them.
+    `cross_lingual`: "translate_query" (default) scores each passage against the query
+    translated into that passage's language. "shared" uses one query vector for every
+    language and relies on the multilingual model alone; measured, that fails (eval_results.md).
+    `query_lang` overrides the detected language of `query`.
     `info`, when a dict is passed, is filled with timings and counts.
     """
     if mode not in MODES:
         raise ValueError(f"mode must be one of {MODES}")
+    if cross_lingual not in CROSS_LINGUAL:
+        raise ValueError(f"cross_lingual must be one of {CROSS_LINGUAL}")
     for kind in passage_types or ():
         if kind not in KINDS:
             raise ValueError(f"passage type must be one of {KINDS}")
@@ -182,18 +224,18 @@ def search(query=None, doc_number=None, claim_number=None, top_k=10, cpc_prefix=
         clock = now
 
     # 1. what to search with
-    query_vector, keyword_text, source_id = None, query, None
+    keyword_text, source_id, text = query, None, query
     if doc_number:
-        query_vector, info["query_source"] = source_vector(index, doc_number, claim_number)
+        text, source, info["query_source"] = source_text(index, doc_number, claim_number)
         source_id = index.patent_ids[doc_number]
         row = index.con.execute("SELECT title_en, abstract_en FROM patents WHERE id = ?", (source_id,)).fetchone()
         keyword_text = f"{row[0] or ''} {row[1] or ''}"
-    elif query and mode != "keyword":
-        query_vector = embed.encode([query], "query: ")[0]
-    elif not query:
+    elif query:
+        source = (query_lang or query_language(query)).lower()
+    elif not any((cpc_prefix, keywords, title, date_from, date_to, language)):
+        raise ValueError("give a query, a document number, or at least one filter")
+    else:
         keyword_text = keywords  # filters only: order by how well the keywords match
-        if not any((cpc_prefix, keywords, title, date_from, date_to, language)):
-            raise ValueError("give a query, a document number, or at least one filter")
     lap("encode_query")
 
     # 2. filter first, in SQL
@@ -205,7 +247,27 @@ def search(query=None, doc_number=None, claim_number=None, top_k=10, cpc_prefix=
     info["patents_passing_filters"] = len(index.patent_ids) if allowed is None else int(allowed.sum())
     lap("filter")
 
-    # 3. semantic ranking over the surviving passages
+    # 3. the query, in English and in each other language that survived the filters
+    query_vector, version, texts = None, None, [text]
+    if text and cross_lingual == "translate_query":
+        codes = set(np.unique(index.patent_language if allowed is None else index.patent_language[allowed]).tolist())
+        present = [lang for code, lang in enumerate(index.languages, 1) if code in codes and mode != "keyword"]
+        versions = query_versions(index, text, source, present)
+        info["query_languages"] = sorted(versions)
+        if query:
+            keyword_text = versions["en"]  # keyword search only knows English words
+        texts = [versions["en"]] + [versions.get(lang, versions["en"]) for lang in index.languages]
+    lap("translate_query")
+    if text and mode != "keyword":
+        unique = list(dict.fromkeys(texts))
+        encoded = embed.encode(unique, "query: ")
+        if len(unique) == 1:
+            query_vector = encoded[0]  # one language in play: the plain single vector search
+        else:
+            query_vector, version = encoded[[unique.index(t) for t in texts]], index.vector_language
+    lap("encode_query")
+
+    # 4. semantic ranking over the surviving passages
     semantic, best_row, similarity = [], {}, {}
     if query_vector is not None and mode != "keyword" and len(index.vectors):
         keep = None if allowed is None else allowed[index.vector_patent]
@@ -213,12 +275,12 @@ def search(query=None, doc_number=None, claim_number=None, top_k=10, cpc_prefix=
             kinds = np.isin(index.vector_kind, [KINDS.index(kind) for kind in passage_types])
             keep = kinds if keep is None else keep & kinds
         info["vectors_kept"] = len(index.vectors) if keep is None else int(keep.sum())
-        patents, rows, scores = rank_patents(index.vectors, index.vector_patent, query_vector, keep, strategy)
+        patents, rows, scores = rank_patents(index.vectors, index.vector_patent, query_vector, keep, strategy, version)
         semantic = patents.tolist()
         best_row, similarity = dict(zip(semantic, rows.tolist())), dict(zip(semantic, scores.tolist()))
     lap("score")
 
-    # 4. keyword ranking over English title and abstract
+    # 5. keyword ranking over English title and abstract
     keyword = []
     if mode != "semantic" or query_vector is None:
         keyword = [p for p in keyword_rank(index.con, keyword_text) if allowed is None or allowed[p]]
@@ -226,7 +288,7 @@ def search(query=None, doc_number=None, claim_number=None, top_k=10, cpc_prefix=
             keyword = [p for p in keyword if p in best_row]  # evidence must be of a requested type
     lap("keyword")
 
-    # 5. reciprocal rank fusion
+    # 6. reciprocal rank fusion
     fused = {}
     for ranking in (semantic, keyword):
         for rank, patent_id in enumerate(ranking, 1):
@@ -243,7 +305,7 @@ def search(query=None, doc_number=None, claim_number=None, top_k=10, cpc_prefix=
     keyword_position = {patent_id: rank for rank, patent_id in enumerate(keyword, 1)}
     lap("fuse")
 
-    # 6. fetch what is shown
+    # 7. fetch what is shown
     results = []
     for patent_id in ranked:
         patent = index.con.execute("SELECT * FROM patents WHERE id = ?", (patent_id,)).fetchone()
@@ -266,7 +328,7 @@ def search(query=None, doc_number=None, claim_number=None, top_k=10, cpc_prefix=
         })
     lap("fetch")
 
-    # 7. English for anything that is not English, on demand and cached
+    # 8. English for anything that is not English, on demand and cached
     if translate_results:
         for result in results:
             if result["passage"] and result["language"] not in (None, "en"):

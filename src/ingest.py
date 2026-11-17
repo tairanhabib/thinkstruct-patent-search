@@ -147,6 +147,7 @@ def ingest_dir(data_dir, index_dir=None, collection=None):
     con = db.connect(index_dir)
     collection = collection or os.path.basename(os.path.normpath(data_dir))
     stats = collections.Counter()
+    before = dict(translate.usage)
     known = {row[0] for row in con.execute("SELECT doc_number FROM patents")}
     for path in sorted(glob.glob(os.path.join(data_dir, "**", "*.json"), recursive=True)):
         try:
@@ -177,6 +178,9 @@ def ingest_dir(data_dir, index_dir=None, collection=None):
             if not (patent["title"] or patent["abstract"] or patent["claims"] or patent["description"]):
                 stats["no_searchable_text"] += 1
         con.commit()
+    if translate.usage["characters"] > before["characters"]:
+        stats["translated_characters"] = translate.usage["characters"] - before["characters"]
+        stats["translate_seconds"] = round(translate.usage["seconds"] - before["seconds"], 1)
     stats.update(embed.embed_pending(con, index_dir))
     con.close()
     return dict(stats)

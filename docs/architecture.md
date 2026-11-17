@@ -1,0 +1,81 @@
+# Architecture
+
+One picture of the whole project. Solid arrows are data moving. Dotted arrows are "measures" or "is a model of".
+
+```mermaid
+flowchart TD
+    subgraph IN["Input data (JSON files, never committed)"]
+        small["data/small<br/>640 English patents"]
+        parallel["data/parallel<br/>100 patents in German and Chinese<br/>(machine translated copies)"]
+        foreign["data/foreign<br/>real non-English sample<br/>(not received yet)"]
+    end
+
+    mk["scripts/make_parallel_set.py<br/>opus-mt English to German, Chinese"]
+    small --> mk --> parallel
+
+    subgraph ING["Ingest: python cli.py ingest DIR"]
+        norm["normalize fields<br/>record what is missing, drop nothing"]
+        claims["split and number claims<br/>drop cancelled claims"]
+        lang["detect language"]
+        tr1["translate title and abstract<br/>to English (foreign patents only)"]
+        emb["embed every passage<br/>in its original language<br/>multilingual-e5-small"]
+        norm --> claims --> lang --> tr1 --> emb
+    end
+    small --> norm
+    parallel --> norm
+    foreign -.-> norm
+
+    subgraph IDX["Index directory: index/"]
+        db[("patents.db (SQLite)<br/>patents, passages, classifications<br/>full text index on English title and abstract<br/>translation cache")]
+        vec[("embeddings.npy<br/>one normalized vector per passage window")]
+    end
+    tr1 --> db
+    emb --> vec
+
+    subgraph SRCH["Search: python cli.py search / similar / show"]
+        q["query text in any language<br/>or document number and claim<br/>or filters only"]
+        filt["1. filters in SQL<br/>classification prefix, keywords, title,<br/>dates, language, passage type"]
+        sem["2. score surviving vectors<br/>best passage per patent"]
+        kw["3. keyword ranking (BM25)<br/>English title and abstract"]
+        rrf["4. reciprocal rank fusion"]
+        show["5. show in English<br/>translate displayed passages on demand, cache"]
+        q --> filt --> sem --> rrf --> show
+        filt --> kw --> rrf
+    end
+    db --> filt
+    db --> kw
+    vec --> sem
+    show <--> db
+
+    subgraph MEAS["Measurement"]
+        bench["scripts/benchmark.py<br/>benchmarks.md"]
+        evalm["scripts/evaluate_multilingual.py<br/>eval_results.md"]
+        tests["tests/<br/>missing fields, filters, claims"]
+    end
+    bench -.-> SRCH
+    evalm -.-> SRCH
+    tests -.-> ING
+    tests -.-> SRCH
+
+    subgraph P2["Part 2: the same design at 10 million patents"]
+        design["docs/scale_design.md"]
+        poc["poc/ and docker-compose.yml<br/>PostgreSQL with pgvector<br/>hybrid query as one SQL statement"]
+    end
+    IDX -.-> poc
+    design -.-> poc
+```
+
+## Where each piece lives
+
+| Piece | File |
+| --- | --- |
+| Schema | `src/db.py` |
+| Field normalization, claim parsing, missing field handling | `src/ingest.py` |
+| Embedding model, windows, vector files | `src/embed.py` |
+| Language detection, translation, cache | `src/translate.py` |
+| Filters, ranking, fusion | `src/search.py` |
+| Command line and display | `cli.py` |
+| Timing | `scripts/benchmark.py` |
+| Synthetic German and Chinese set | `scripts/make_parallel_set.py` |
+| English against foreign comparison | `scripts/evaluate_multilingual.py` |
+| Scale design and its proof of concept | `docs/scale_design.md`, `poc/` |

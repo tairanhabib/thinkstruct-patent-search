@@ -139,7 +139,7 @@ def cmd_stats(args):
 def cmd_search(args):
     start = time.perf_counter()
     index, info = engine.Index(args.index), {}
-    if getattr(args, "query", None) and args.mode != "keyword":
+    if (getattr(args, "query", None) or getattr(args, "doc", None)) and args.mode != "keyword":
         embed.encode(["warm up"], "query: ")  # load the model outside the timed search
     startup = time.perf_counter() - start
     try:
@@ -148,16 +148,20 @@ def cmd_search(args):
             claim_number=getattr(args, "claim", None), top_k=args.top, cpc_prefix=args.cpc, keywords=args.keywords,
             title=args.title, date_from=args.date_from, date_to=args.date_to, language=args.language,
             passage_types=args.types.split(",") if args.types else None, include_unknown=args.include_unknown,
-            mode=args.mode, strategy=args.strategy, index=index, info=info)
+            mode=args.mode, strategy=args.strategy, cross_lingual=args.cross_lingual, query_lang=args.query_language,
+            index=index, info=info)
     except ValueError as error:
         raise SystemExit(f"error: {error}")
     if "query_source" in info:
-        print(f"Searching with the {info['query_source']} of {args.doc}.\n")
+        print(f"Searching with the {info['query_source']} of {args.doc}.")
+    if len(info.get("query_languages", [])) > 1:
+        print(f"Query searched in: {', '.join(info['query_languages'])}.")
+    print()
     print(format_results(results, args.show_original))
     ms = info["ms"]
     print(f"Startup (load index and model): {startup:.1f} s")
     print(f"{info['patents_passing_filters']} patents passed the filters, {info.get('vectors_kept', 0)} vectors kept. "
-          f"{ms['total']:.0f} ms: encode query {ms['encode_query']:.0f}, filter {ms['filter']:.1f}, score {ms['score']:.1f}, "
+          f"{ms['total']:.0f} ms: translate query {ms['translate_query']:.0f}, encode query {ms['encode_query']:.0f}, filter {ms['filter']:.1f}, score {ms['score']:.1f}, "
           f"keyword {ms['keyword']:.1f}, fuse and fetch {ms['fuse'] + ms['fetch']:.1f}, translate {ms['translate']:.0f}")
 
 
@@ -183,6 +187,10 @@ def main():
     filters.add_argument("--mode", choices=engine.MODES, default="hybrid")
     filters.add_argument("--strategy", choices=("auto", "filter_first", "filter_after"), default="auto",
                          help="auto filters first when the filter is selective, see benchmarks.md")
+    filters.add_argument("--cross-lingual", choices=engine.CROSS_LINGUAL, default="translate_query",
+                         help="translate_query: search each language with the query in that language (default). "
+                              "shared: one query vector for all languages")
+    filters.add_argument("--query-language", help="language of the query when detection gets it wrong, for example de")
     filters.add_argument("--top", type=int, default=10)
     filters.add_argument("--show-original", action="store_true", help="also print foreign text untranslated")
 

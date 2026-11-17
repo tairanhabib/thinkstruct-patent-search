@@ -2,7 +2,8 @@ import numpy as np
 import pytest
 
 from conftest import COMPLETE, OTHER, without
-from src.search import Index, rank_patents, search
+from src import translate
+from src.search import Index, query_language, rank_patents, search
 
 
 def docs(results):
@@ -94,7 +95,7 @@ def test_foreign_patent_is_searchable_by_english_keywords_and_shown_in_english(b
                      claims=["eine Radnabe mit einer Bohrung und einem Reifendrucksensor, der in der Bohrung sitzt"],
                      detailed_description=["Die Nabe hat eine Bohrung, in der der Drucksensor und seine Batterie festsitzen."])
     index, stats = build_index([german, OTHER])
-    assert stats["language_de"] == 1
+    assert stats["language_de"] == 1 and stats["translated_characters"] > 100 and "translate_seconds" in stats
     row = index.con.execute("SELECT language, title_en FROM patents WHERE doc_number = 'D-GERMAN'").fetchone()
     assert row["language"] == "de" and row["title_en"] == "[de to en] Radnabe mit Drucksensor"
     [result] = search("Radnabe Drucksensor Bohrung", language="de", index=index)
@@ -118,3 +119,67 @@ def test_index_regroups_vectors_that_were_saved_out_of_patent_order(build_index,
     shuffled = Index(str(tmp_path / "index"))
     assert np.all(np.diff(shuffled.vector_patent) >= 0)
     assert [(r["doc_number"], r["passage"]["text"]) for r in search("pressure sensor battery", mode="semantic", index=shuffled)] == expected
+
+
+GERMAN = without(COMPLETE, doc_number="D-GERMAN", title="Radnabe mit Drucksensor",
+                 abstract="Eine Radnabe mit einem Reifendrucksensor, der den Fülldruck des Reifens an den Fahrer meldet.",
+                 claims=["eine Radnabe mit einer Bohrung und einem Reifendrucksensor, der in der Bohrung sitzt"],
+                 detailed_description=["Die Nabe hat eine Bohrung, in der der Drucksensor und seine Batterie festsitzen."])
+ENGLISH_HUB = without(COMPLETE, doc_number="D-ENGLISH-HUB", title="Hub cap",
+                      abstract="A decorative hub cap that clips onto a wheel hub and sensor housing of a vehicle.",
+                      claims=["1 . A hub cap with clips that engage a wheel hub"], detailed_description=[])
+
+
+def dictionary_translator(texts, source, target="en", beams=4):
+    """A fake translator that knows a few words, enough to turn the test query into German."""
+    words = {"wheel": "Radnabe", "hub": "Bohrung", "pressure": "Drucksensor", "sensor": "Reifendrucksensor"}
+    if (source, target) == ("en", "de"):
+        return [" ".join(words.get(word, word) for word in text.split()) for text in texts]
+    return [f"[{source} to {target}] {text}" for text in texts]
+
+
+def test_query_is_translated_into_the_language_of_each_patent(build_index, monkeypatch):
+    monkeypatch.setattr(translate, "translate_texts", dictionary_translator)
+    index, _ = build_index([GERMAN, ENGLISH_HUB])
+    assert index.languages == ["de"]
+    query = "wheel hub pressure sensor"
+    shared = search(query, mode="semantic", cross_lingual="shared", index=index)
+    assert docs(shared)[0] == "D-ENGLISH-HUB"  # one English vector: the English patent wins on shared words
+    info = {}
+    translated = search(query, mode="semantic", cross_lingual="translate_query", index=index, info=info)
+    assert docs(translated)[0] == "D-GERMAN" and info["query_languages"] == ["de", "en"]
+    german_hit, english_hit = translated[0], next(r for r in translated if r["doc_number"] == "D-ENGLISH-HUB")
+    assert german_hit["similarity"] > english_hit["similarity"]
+    assert english_hit["similarity"] == pytest.approx(shared[0]["similarity"], abs=1e-5)  # English rows still use the English query
+    for strategy in ("filter_first", "filter_after"):
+        again = search(query, mode="semantic", strategy=strategy, language="de", index=index)
+        assert docs(again) == ["D-GERMAN"] and again[0]["similarity"] == pytest.approx(german_hit["similarity"], abs=1e-5)
+    info = {}
+    search(query, mode="semantic", language="en", index=index, info=info)
+    assert info["query_languages"] == ["en"]  # the filter left no German patent, so nothing was translated
+
+
+def test_foreign_query_is_searched_in_english_too(build_index, monkeypatch):
+    monkeypatch.setattr(translate, "translate_texts",
+                        lambda texts, source, target="en", beams=4: ["tire tread circumferential grooves" for _ in texts])
+    index, _ = build_index([COMPLETE, OTHER])
+    info = {}
+    results = search("Reifen mit Umfangsrillen im Laufstreifen und Lamellen in jeder Rippe", query_lang="de", index=index, info=info)
+    assert docs(results)[0] == "D-OTHER" and results[0]["keyword_rank"] == 1 and info["query_languages"] == ["de", "en"]
+
+
+def test_english_query_on_an_english_index_never_calls_the_translator(build_index, monkeypatch):
+    def refuse(*args, **kwargs):
+        raise AssertionError("translator called")
+    index, _ = build_index([COMPLETE, OTHER])
+    monkeypatch.setattr(translate, "translate_texts", refuse)
+    assert docs(search("wheel hub with integrated pressure sensor for a passenger car", index=index))[0] == "D-COMPLETE"
+    assert docs(search(doc_number="D-COMPLETE", index=index)) == ["D-OTHER"]
+
+
+def test_short_english_queries_are_not_mistaken_for_another_language():
+    for query in ("wheel hub", "tire tread pattern", "trailer hitch coupling with automatic locking",
+                  "bead core structure that improves rim seating"):
+        assert query_language(query) == "en"
+    assert query_language("Luftreifen mit einem Laufstreifen, der in Umfangsrichtung verlaufende Rillen aufweist") == "de"
+    assert query_language("一种具有周向沟槽的充气轮胎") == "zh"

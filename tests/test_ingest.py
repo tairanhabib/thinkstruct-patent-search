@@ -2,7 +2,7 @@ import re
 
 from src.embed import windows
 from src.ingest import normalize, parse_claims
-from src.translate import detect_language
+from src.translate import _sentences, detect_language
 
 
 def numbers(claims):
@@ -77,3 +77,16 @@ def test_language_detection_refuses_short_text():
     assert detect_language("The tire has a tread portion and two sidewall portions joined by a carcass.") == "en"
     assert detect_language("Der Reifen hat einen Laufstreifen und zwei Seitenwände, die durch eine Karkasse verbunden sind.") == "de"
     assert detect_language("一种充气轮胎，包括胎面部和一对胎侧部。") == "zh"
+
+
+def test_text_in_capitals_is_lower_cased_before_translation():
+    assert _sentences("PNEUMATIC TIRE", "en") == ["Pneumatic tire"]
+    assert _sentences("A tire. It has a tread.", "en") == ["A tire.", "It has a tread."]
+    assert _sentences("一种轮胎。它有胎面。", "zh") == ["一种轮胎。", "它有胎面。"]
+
+
+def test_east_asian_languages_are_told_apart_by_script():
+    assert detect_language("一种充气轮胎,包括胎面部(10)和一对胎侧部(20),其中A-B-C") == "zh"
+    assert detect_language("トレッド部と一対のサイドウォール部とを備える空気入りタイヤ。") == "ja"
+    assert detect_language("트레드부와 한 쌍의 사이드월부를 포함하는 공기입 타이어.") == "ko"
+    assert detect_language("轮胎") is None  # two characters are still too few

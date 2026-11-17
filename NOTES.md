@@ -212,8 +212,8 @@ python -m pytest
 | Same at 983,160 vectors, 53% kept, scoring only | filter first 240 ms, filter after 69 ms |
 | Command line start (load index and model) | 9.3 s cold, measured once |
 
-Run to run variation is roughly 20% on the sub-millisecond rows: the three benchmark runs I made gave 1.30, 1.43 and 1.91 ms
-for the same unfiltered scoring step. The direction of every comparison was the same in all three.
+Run to run variation is roughly 20% to 40% on the sub-millisecond rows: the two benchmark runs after the sort was removed gave between 1.30 and 1.91 ms
+for the same unfiltered scoring step. The direction of every comparison was the same in both.
 
 ### What the numbers say
 
@@ -267,3 +267,232 @@ still ingested, still found, and shown as `Unknown`. Further tests cover each fi
 - Every command line call loads the model again (about 9 s cold, 0.1 s for commands that need no model).
 - Part 2 of the benchmark copies real vectors with noise. It measures arithmetic cost at a million vectors, not retrieval
   quality at that size.
+
+## Phase D: scale design (`docs/scale_design.md`)
+
+Written by a separate agent from the measured numbers above, then checked by me line by line. I recomputed the vector
+counts, byte sizes, GPU hours, translation totals and both monthly totals by hand. They add up.
+
+Headline numbers (US dollars, prices checked 16 November 2026):
+
+| | Phase 1: abstract and claims, 174 million vectors | Phase 2: full text, 512 million vectors |
+| --- | --- | --- |
+| One-time, hosted translation of title and abstract | $25,170.58, of which $22,080 is translation | $25,265.03 |
+| Monthly | $3,829.02 | $9,784.02, or $3,863.52 if descriptions get no approximate index |
+| Embedding all of it on a rented GPU | $48.62 (48.3 GPU hours) | $94.45 more |
+| Translating all full text up front instead (rejected) | $720,000 | |
+
+What matters in it:
+- Compute is not where the money goes. The database instance is 76% of the phase 1 monthly bill.
+- Translating two short fields costs 32.6 times less than translating everything, and search needs neither.
+- The route rule: exact search when a filter leaves under about 1 million vectors, approximate index otherwise.
+  That rule comes straight from the Phase C measurements and the Phase E finding.
+
+Weak points, stated in the document itself:
+- **Unverified prices.** The managed database prices ($4.00 and $12.00 per hour) and its disk price come from third party
+  price trackers, not from the provider's own page. They carry $3,035 of the $3,829 monthly total. Marked "No" in the
+  price sources table. The GPU, machine, disk, Azure and Amazon translation prices were read from the providers' own
+  price files.
+- **11 assumptions**, numbered A1 to A11, including a 30% foreign share (nothing to base it on) and an index size of
+  1.5 times the vector bytes.
+- **The SQL in the document was not run.** Only the proof of concept's statement was.
+- Half precision vectors and iterative index scans are designed in but have never been run in this project.
+
+**Ruling:** the agent partitioned passages by passage type rather than by classification section or language as the plan
+suggested, because that makes phase 2 purely additive. I kept it. Cost if wrong: a filter on classification section does
+not skip partitions.
+
+## Phase E: proof of concept (`poc/`, `docker-compose.yml`)
+
+Written by a separate agent. Loads the real index into PostgreSQL with pgvector and runs the hybrid query as one SQL
+statement: classification prefix, keyword match, vector ordering, best passage per patent.
+
+**What was actually run:** Docker is not installed on this machine, so the Docker path has **not** been run. The script
+was run against an embedded PostgreSQL 16.2 with pgvector 0.6.2 from the `pgserver` package (`--pgserver DIR`).
+
+Measured (median of 15 runs, on a busy machine, so read as "about"):
+
+| What | Result |
+| --- | --- |
+| Load 640 patents and 32,772 vectors with COPY | 8.3 s |
+| Build all indexes | 6.2 s |
+| Exact statement | 10 rows, 1.15 ms |
+| Planner left alone | 10 rows, 1.14 ms, chose not to use the vector index |
+| Forced onto the approximate index, default setting | **6 rows instead of 10** |
+| Forced onto the approximate index, largest setting | **8 rows instead of 10**, 11.1 ms |
+| Agreement with the Python search | same 10 patents, same order, largest score difference 1.2e-07 |
+| Vector index size | 59 MB for a 68 MB table |
+
+The useful finding: with a selective filter (12 patents pass), the approximate index silently returns too few results,
+because it hands over a capped number of rows and the filter runs afterwards. The missing patents' best passages rank
+1,130th and 2,214th among all vectors. This is the "filtered approximate search loses recall" challenge, reproduced on
+640 patents.
+
+Not done:
+- Docker path not run. The image tag was only checked to exist.
+- Iterative index scans (the fix in newer pgvector) not run: the embedded pgvector is too old.
+- The statement uses keywords as a filter only. Rank fusion in SQL is sketched in the design document, not run.
+
+## Phase F: machine translation enhancement and evaluation
+
+Commands:
+
+```
+python scripts/make_parallel_set.py          # 100 English patents into German and Chinese
+python cli.py ingest data/parallel           # same ingest as the English data
+python scripts/evaluate_multilingual.py      # writes eval_results.md
+python scripts/compare_models.py             # is the gap a property of the small model?
+```
+
+The real non-English sample has not arrived. Everything below is measured on a **synthetic** set: 100 English patents
+machine translated into German and Chinese. `data/foreign/` is the place for the real sample; it goes through the same
+`python cli.py ingest data/foreign` with no code change, as far as I can tell without seeing its format.
+
+### The main finding: the plan's core assumption was wrong
+
+The plan said: embed every language with one multilingual model, text lands in one shared vector space, so an English
+query finds a German passage with no translation. I built that, measured it, and it fails.
+
+Test: the first claim of a patent, in English, is the query. Claims are removed from the candidates. The right answer is
+the same patent's abstract or description, in English, German or Chinese. "Mixed" means the 100 test patents in one
+language plus the 540 other English patents. MRR is mean reciprocal rank.
+
+| Mixed corpus | English target | German target | Chinese target |
+| --- | --- | --- | --- |
+| Semantic, shared space (the plan) | 0.930 | 0.007 | 0.003 |
+| Hybrid, shared space (the plan) | 0.945 | 0.059 | 0.034 |
+| Keyword only (translated title and abstract) | 0.964 | 0.906 | 0.719 |
+| **Semantic, query translated** | 0.930 | 0.912 | 0.920 |
+| **Hybrid, query translated (the default now)** | 0.945 | 0.921 | 0.933 |
+
+Recall at 10 for a German or Chinese target in the mixed corpus was 0.00 with the shared space: not one of 200
+foreign targets reached the first page. With query translation it is 0.99.
+
+Diagnosis, in the order the plan asked for (model, truncation, translation noise):
+
+- **Model: language bias. This is the cause.** Two unrelated passages in the same language score higher than a passage
+  and its own translation. Measured on abstracts: English against a different English patent averages 0.831 (99th
+  percentile 0.900). English against the same patent in German averages 0.851, in Chinese 0.809. So 27.5% of all other
+  English abstracts outscore a patent's own German copy, and 76.2% outscore its own Chinese copy. On clean hand-written
+  sentences the effect is the same: an exact German translation of the query scored 0.803, an unrelated English sentence
+  about trailer hitches 0.778.
+- **Is it the small model?** Partly. `scripts/compare_models.py`, abstracts only, mixed corpus, MRR for a German /
+  Chinese target: `multilingual-e5-small` 0.017 / 0.008, `multilingual-e5-base` 0.110 / 0.028, `BAAI/bge-m3`
+  (1,024 dimensions) 0.310 / 0.099. English stays near 0.91 for all three. A model with 2.7 times the storage gets a
+  third of the way there. A bigger model is not the fix.
+- **Truncation: no.** 0 to 5 vectors per language exceed the model input.
+- **Translation noise: real but secondary.** With no English distractors ("alone", 100 candidates in one language) the
+  shared space still only reached 0.409 (German) and 0.210 (Chinese) against 0.982.
+
+### Rulings
+
+- **Ruling: search each language with the query translated into that language.** `search()` detects the query language,
+  translates the query to English if needed, then from English into each language that still has patents after the
+  filters, and scores every passage against the query in its own language. Passages are still embedded in their original
+  language and never translated for search, so the cost argument of the plan holds: only the short query is translated.
+  The plan's approach is kept as `--cross-lingual shared` so the comparison stays reproducible.
+  Cost if wrong: search now depends on translating a short query well, and adds one translation and one encoding per
+  language to an uncached query.
+- **Ruling: search by patent now encodes the claim or abstract text as a query** instead of reusing its stored vector, so
+  it goes through the same translation path. Cost: `similar` needs the model loaded.
+- **Ruling: Chinese, Japanese and Korean are detected by script, not statistics.** The statistical detector labelled only
+  79 of 100 Chinese abstracts as Chinese (10 Korean, 11 unknown). Those 21 were then translated with the wrong model or
+  not at all. Counting characters by script gets 100 of 100. Tested.
+- **Ruling: greedy decoding for queries and for building the test set**, beam width 4 for what a person reads (title,
+  abstract, displayed passages). Measured on the laptop GPU for English to German: 3,577 characters per second greedy,
+  705 with beam width 4.
+- **Ruling: the query is translated only into languages that survive the filters.** `--language en` costs nothing extra.
+
+### Measured
+
+Building the test set (`make_parallel_set.py`):
+
+| What | Value |
+| --- | --- |
+| Patents | 100, chosen at random (seed 0) from 505 that have a description and a first claim of at least 150 characters |
+| Characters translated | 2,778,802 per language |
+| Time | German 395 s (7,035 characters per second), Chinese 458 s (6,062), whole script 14 min 15 s |
+
+Ingesting it (`cli.py ingest data/parallel`):
+
+| What | Value |
+| --- | --- |
+| Patents | 200 (100 German, 100 Chinese), all detected correctly after the script rule |
+| Title and abstract translated to English | 100,829 characters in 224.9 s: 448 characters per second (one patent at a time, beam width 4) |
+| Vectors | 11,870 from 11,389 passages in 47.2 s. 5 exceed the model input |
+| Whole ingest | 4 min 37 s |
+| Index after both ingests | 840 patents, 43,739 passages, 44,642 vectors |
+
+Evaluation (`eval_results.md`, full tables there). Gap is MRR minus the English MRR, with a 95% paired bootstrap interval:
+
+| Setting, hybrid, query translated | English | German (gap, interval) | Chinese (gap, interval) |
+| --- | --- | --- | --- |
+| Alone (100 candidates) | 0.990 | 0.972 (-0.018, -0.038 to -0.003) | 0.966 (-0.024, -0.047 to -0.005) |
+| Mixed (640 candidates) | 0.945 | 0.921 (-0.023, -0.059 to +0.009) | 0.933 (-0.012, -0.053 to +0.028) |
+
+The other direction, a foreign query against the 640 original English patents. This is the fairest test here: the
+query is translated to English by a different model than the one that made the copies, and has to match text a person wrote.
+
+| Query language | Semantic, shared | Semantic, query translated | Hybrid, query translated |
+| --- | --- | --- | --- |
+| English | 0.930 | 0.930 | 0.945 |
+| German | 0.591 | 0.900 | 0.917 |
+| Chinese | 0.051 | 0.770 | 0.862 |
+
+Query language was detected correctly for 100 of 100 German and 100 of 100 Chinese claims.
+
+Cost of query translation (laptop on battery in Low Power Mode, so read these as slow-side numbers):
+
+| What | Value |
+| --- | --- |
+| Claim-length query (median 667 characters) into 2 languages, not cached | median 1,340 ms, slowest 8,760 ms (includes loading the models) |
+| Same, cached | 0.05 ms |
+| Bulk query translation | 249,808 characters in 47 s (5,330 characters per second) |
+
+### So, does it "perform comparably"?
+
+- English query, foreign patents, mixed corpus: yes on this test set. The German and Chinese intervals both include zero
+  and the gap is 1 to 2 points of MRR.
+- Foreign query, English patents: German yes (0.917 against 0.945). **Chinese no: 0.862 against 0.945**, and 0.770
+  against 0.930 without keywords. Two machine translations in a row (English to Chinese to make the patent, Chinese to
+  English for the query) lose too much.
+
+### What this evaluation does not show (read before trusting the table)
+
+- **The test set is machine translated, not real.** Real German and Chinese patents are written by people, use the
+  proper legal vocabulary, and are messier.
+- **The good German and Chinese rows are an upper bound.** The copies were made by the same opus-mt models that then
+  translate the query. Query and document share that model's wording more than they would with real patents. The
+  foreign query table does not have this flaw, which is why I call it the fairest.
+- **Same patent matching is a stand-in for relevance.** A patent's description often repeats its claim nearly word for
+  word, which makes the English baseline easy. This measures "can it find the same invention", not "does it rank prior
+  art well".
+- 100 queries. The intervals are about plus or minus 4 points of MRR.
+- One technical field (vehicle wheels and tires), two foreign languages.
+- Scores from different languages are merged without calibration. No offset showed up here, on machine translated text.
+
+### Translation quality, seen while building
+
+Search no longer depends on translating documents, only display does. That matters, because the translations are rough:
+
+- The title `SPOKE` became `Sprecher` (German: speaker) and `发声` (Chinese: to make a sound), shown back in English as
+  "Speaker" and "Make a sound." The model read "spoke" as the past tense of "speak".
+- All capital titles came out as garbage at first (`SPOKE` became `GESAMT`, and a run of `SPOK SPKO SPOK`). 93 of 100
+  titles changed once capitals were lower-cased before translation. Fixed and tested.
+- The Chinese model translated "claim" as `索赔` (a claim for compensation) instead of `权利要求`. So the parent of a
+  dependent claim was found for 1,215 of 1,712 claims in English and German, and for 0 of 1,712 in the machine made
+  Chinese. Real Chinese claims use `权利要求`, which the parser handles (tested), so this is a property of the test set.
+- Displayed results read like "70 to 92 hours of a solution polymerised styrene butadiene rubber" for "parts per hundred".
+  Good enough to decide whether to read the original. Not good enough for legal use.
+
+### Shortcuts and weaknesses
+
+- Translation at ingest runs one patent at a time (448 characters per second). Batching across patents would be several
+  times faster: the same models did 6,000 to 7,000 in bulk.
+- A non-English query goes to other languages through English, so it is translated twice.
+- A language with no opus-mt model falls back to the English query vector for its passages, which is the shared space
+  that was just shown not to work. It prints a warning.
+- Query language detection is deliberately cautious (40 letters, 90% confidence) and treats short queries as English.
+  `--query-language` overrides it.
+- The first search after start loads a translation model per language (seconds).
+- Timings in this phase after the first evaluation were taken on battery in Low Power Mode.
