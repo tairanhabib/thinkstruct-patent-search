@@ -1,0 +1,11 @@
+.venv/
+data/
+index/
+*.zip
+__pycache__/
+.pytest_cache/
+.DS_Store
+.superpowers/
+# private planning material and the company's task sheet stay out of the public repo
+PLAN.md
+docs/thinkstruct-coding-task.pdf
