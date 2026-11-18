@@ -9,7 +9,7 @@ How to read this document:
 
 ## 1. Goal and scope
 
-Part 1 searches 640 patents on a laptop. This document describes the same search for 10 million patents: passages embedded in their original language with one multilingual model, the short query translated into each language that has patents, keyword search over the English title and abstract, filters applied before any vector is scored, and the two rankings fused.
+Part 1 searches 640 patents on a laptop. This document describes the same search for 10 million patents: passages embedded in their original language with one multilingual model, the short query translated into each language that has patents, keyword search over the English title and abstract, filters applied before any vector is scored, and the keyword ranking fused in as an option. Part 1 measured that semantic ranking alone is the better default, and that a fused keyword list must count far less than the semantic one (`README.md`, section 3).
 Phase 1 embeds the abstract and the claims: 174 million vectors, 135 GB at half precision.
 Phase 2 adds the description paragraphs: 512 million vectors in total, 397 GB.
 The design is one PostgreSQL database with the pgvector extension and a few small workers around it. It was picked because it is simple, and section 8 says where it will hurt. User accounts, drawings and legal status data are out of scope.
@@ -207,11 +207,11 @@ Build the index after the load, not before: inserting into an existing HNSW inde
 
 | Situation | Measured on the laptop | What it means at 174 million vectors | Route |
 | --- | --- | --- | --- |
-| No filter | Exact scoring: 70 ms per 983,160 vectors | 174,000,000 / 983,160 × 70 ms = 12.4 s per query on one core. Too slow | Approximate index |
-| Filter keeps 1% | Filter first 2.4 ms, filter after 43.1 ms: 18 times faster | 1.74 million vectors survive: about 0.12 s at the laptop rate | Exact, after the filter |
+| No filter | Exact scoring: 36.3 ms per 983,160 vectors | 174,000,000 / 983,160 × 36.3 ms = 6.4 s per query at the laptop rate. Too slow | Approximate index |
+| Filter keeps 1% | Filter first 2.4 ms, filter after 32.5 ms: 13.5 times faster, scoring step only | 1.74 million vectors survive: about 0.06 s at the laptop rate | Exact after the filter, once fewer than about 1 million vectors survive (a filter that keeps under about 0.6%). At 1% the count is above that, so the rule below sends this one to the approximate index until the threshold has been tuned |
 | Filter keeps more than about 15% | Filter first was slower than scoring everything, because of the row copy | Tens of millions of vectors survive. Exact is too slow | Approximate index, filter checked during the index scan |
 
-Rule to start with: **exact search when the filter leaves fewer than about 1 million vectors, the approximate index otherwise.** One million vectors is about 57,000 patents in phase 1 (1,000,000 / 17.4) and about 19,500 in phase 2 (1,000,000 / 51.2). The laptop scored that many in about 70 ms. PostgreSQL reads rows from disk pages and will be slower per vector than NumPy. That rate is not measured yet, so the threshold is a starting value to tune (section 9, step 4).
+Rule to start with: **exact search when the filter leaves fewer than about 1 million vectors, the approximate index otherwise.** One million vectors is about 57,000 patents in phase 1 (1,000,000 / 17.4) and about 19,500 in phase 2 (1,000,000 / 51.2). The laptop scored that many in about 37 ms (about 75 ms in the run before, so treat the rate as rough). PostgreSQL reads rows from disk pages and will be slower per vector than NumPy. That rate is not measured yet, so the threshold is a starting value to tune (section 9, step 4).
 
 The proof of concept shows why the rule is needed (`poc/README.md`). With two filters that 12 patents pass, exact search returned the 10 correct patents in about 1 ms. Forced onto the index, the same statement returned 6 of the 10 with default settings and 8 of the 10 with the largest `hnsw.ef_search`, because the filters run after a capped index scan. There the PostgreSQL planner chose the exact route by itself. Do not rely on that at scale, where its row estimates for combined filters can be far off. The search service decides.
 
@@ -241,8 +241,8 @@ WITH allowed AS MATERIALIZED (                  -- 1. filters first, on indexed 
     ORDER BY ts_rank_cd(p.search_en, q) DESC
     LIMIT 200
 )
-SELECT patent_id,                               -- 5. reciprocal rank fusion, constant 60 as in Part 1
-       coalesce(1.0 / (60 + s.rank), 0) + coalesce(1.0 / (60 + k.rank), 0) AS score
+SELECT patent_id,                               -- 5. reciprocal rank fusion, constant 60, keyword list weighted 0.02 as in Part 1
+       coalesce(1.0 / (60 + s.rank), 0) + coalesce(0.02 / (60 + k.rank), 0) AS score  -- semantic only (the default): drop the keyword term
 FROM semantic s FULL OUTER JOIN keyword k USING (patent_id)
 ORDER BY score DESC LIMIT 10;
 COMMIT;
@@ -259,7 +259,7 @@ So the search service does what Part 1 does:
 1. Detect the language of the query. Translate it to English if it is not English.
 2. From English, translate it into each language that still has patents after the filters. A language filter of `en` means no translation at all.
 3. Encode every version.
-4. Run the vector part of the statement once per language, each with `language = ...` and that language's query vector.
+4. Run the vector part of the statement once per language, each restricted to that language's patents and with that language's query vector. The language is a column of `patents`, not of `passages`, so the restriction is the same join the filters use (`patent_id IN (SELECT id FROM patents WHERE language = ...)`).
 5. Put each language's scores on one scale before merging. For each language, score a fixed random sample of a few thousand of its passages against that language's query vector, and express every score as (score - sample mean) / sample spread. Then merge. The passages are never translated for search.
 
 What this costs:
@@ -362,12 +362,12 @@ Measured on the Part 1 sample (640 US patent applications, all in class B60, veh
 | Vectors per patent, full text | 51.2 (32,772 / 640) | `NOTES.md` |
 | Characters per patent, full text | 24,000 (15.36 million / 640) | `NOTES.md` |
 | Characters per patent, title plus abstract | 736 (41.8 + 694.6) | Part 1 index |
-| Raw file size per patent | 25.1 kB (16.1 MB / 640) | `data/small` on disk |
+| Raw file size per patent | 25.2 kB (16.1 MB on disk / 640; the JSON itself is 15.9 MB, 24.9 kB) | `data/small` on disk |
 | Part 1 database per patent (text, metadata, full text index) | 32.8 kB (21.0 MB / 640) | `index/patents.db` |
 | Bytes per vector | 1,536 B as 32-bit floats. 768 B at half precision, 776 B stored | 384 numbers |
-| Embedding speed, laptop GPU | 229 to 330 vectors/s | `NOTES.md` |
-| Parse and load speed without embedding | About 100 patents/s per process (640 patents in 5.8 to 6.8 s: whole ingest minus embedding time) | `NOTES.md` |
-| Exact scoring speed | 70 ms per 983,160 vectors | `benchmarks.md` |
+| Embedding speed, laptop GPU | 138 to 330 vectors/s (the slowest of the recorded runs was on battery in Low Power Mode) | `NOTES.md` |
+| Parse and load speed without embedding | About 100 patents/s per process (640 patents in 5.6 to 6.8 s: whole ingest minus embedding time, over five runs. A sixth run took 8 min 45 s on a laptop that was partly idle, 2 patents/s by the same subtraction, and is not used) | `NOTES.md` |
+| Exact scoring speed | 36.3 ms per 983,160 vectors (73.7 ms in the run before, same laptop) | `benchmarks.md` |
 
 Assumptions:
 
@@ -376,7 +376,7 @@ Assumptions:
 | A1 | The 10 million patents have the same shape as the 640 sampled ones | Same vectors and characters per patent |
 | A2 | Share of non-English patents | 30%, so 3,000,000 patents |
 | A3 | A foreign title and abstract are as long as an English one | 736 characters. Too high for Chinese, Japanese and Korean |
-| A4 | One rented NVIDIA A10G GPU embeds faster than the laptop | 1,000 vectors/s (3.0 to 4.4 times the laptop) |
+| A4 | One rented NVIDIA A10G GPU embeds faster than the laptop | 1,000 vectors/s (3.0 to 7.2 times the laptop) |
 | A5 | HNSW index size per vector at half precision, default settings | 1.5 × 768 B = 1,152 B. Support: the proof of concept measured 59 MiB for 32,772 32-bit vectors, which is 1,888 B each. Half precision removes 768 B of that, leaving 1,120 B. Half precision itself was not run |
 | A6 | Memory needed so the index stays in memory | Index size × 1.25 |
 | A7 | PostgreSQL needs as much space for text as Part 1's SQLite, plus a row header | 32.8 kB per patent plus 24 B per passage row |
@@ -395,8 +395,8 @@ Assumptions:
 | HNSW index (A5) | × 1,152 B | 200.4 GB | 589.8 GB |
 | Memory needed (A6) | index × 1.25 | 250.6 GB | 737.3 GB |
 | Instance memory chosen | 256 GiB = 274.9 GB. 768 GiB = 824.6 GB | 256 GiB | 768 GiB (512 GiB = 549.8 GB is too small) |
-| Text and metadata (A7) | 10,000,000 × 32.8 kB = 327.7 GB, plus 512,000,000 × 24 B = 12.3 GB | 340.0 GB | 340.0 GB |
-| Disk used | text + vectors + index | 675.4 GB | 1,327.1 GB |
+| Text and metadata (A7) | 10,000,000 × 32.8 kB = 328.0 GB, plus 512,000,000 × 24 B = 12.3 GB | 340.3 GB | 340.3 GB |
+| Disk used | text + vectors + index | 675.7 GB | 1,327.4 GB |
 | Disk provisioned | Room to rebuild an index beside the old one | 1,000 GB | 2,000 GB |
 
 All passage text, descriptions included, is loaded in phase 1 so that any patent can be displayed. Phase 2 adds vectors and one index, not text.
@@ -408,7 +408,7 @@ All passage text, descriptions included, is loaded in phase 1 so that any patent
 | Vectors to embed | | 174,000,000 | 338,000,000 |
 | GPU time (A4) | vectors / 1,000 per s / 3,600 | 48.3 h | 93.9 h |
 | GPU cost | hours × $1.006 | $48.62 | $94.45 |
-| Worst case: no faster than the slower laptop run | vectors / 229 per s / 3,600, × $1.006 | 211.1 h, $212.33 | 410.0 h, $412.45 |
+| Worst case: no faster than the slowest laptop run | vectors / 138 per s / 3,600, × $1.006 | 350.2 h, $352.34 | 680.4 h, $684.44 |
 | Parse and load | 10,000,000 / 100 per s = 100,000 s = 27.8 process-hours. Budget 24 h of one 8 virtual CPU machine at $0.29 per hour | $6.96 | $0 (text already loaded) |
 | Database before launch (A11) | 730 h × $4.00 + 1,000 GB × $0.115 | $3,035.00 | $0 (already running) |
 
@@ -433,9 +433,9 @@ Measured local translation throughput (Part 1, Apple M2 Pro laptop GPU, Helsinki
 | What was measured | Characters per second |
 | --- | --- |
 | Title and abstract into English at ingest, one patent at a time, beam width 4 (100,829 characters in 224.9 s) | 448 |
-| Bulk translation out of English in batches of 64, greedy decoding (2,778,802 characters in 395 s and in 458 s) | 7,035 (German) and 6,062 (Chinese) |
+| Bulk translation out of English in batches of 64, greedy decoding (2,778,802 characters in 395 s and in 458 s) | 7,035 (German) and 6,067 (Chinese) |
 
-Cost of the local path at those rates, assuming a rented A10G is no faster than the laptop: at 448 characters per second, 2,208,000,000 / 448 / 3,600 = 1,369 GPU-hours × $1.006 = $1,377. At 6,062 characters per second, 101 GPU-hours = $102. Either is far below the $22,080 hosted price. The first figure is the unbatched worst case; batching across patents is the obvious first improvement.
+Cost of the local path at those rates, assuming a rented A10G is no faster than the laptop: at 448 characters per second, 2,208,000,000 / 448 / 3,600 = 1,369 GPU-hours × $1.006 = $1,377. At 6,067 characters per second, 101 GPU-hours = $102. Either is far below the $22,080 hosted price. The first figure is the unbatched worst case; batching across patents is the obvious first improvement.
 
 The break-even point: the local path is cheaper than $22,080 whenever R is above 28 characters per second on one GPU ($22,080 / $1.006 = 21,948 GPU-hours = 79.0 million seconds, and 2,208,000,000 / 79.0 million = 28). The open questions for the local path are translation quality and engineering time, not compute cost.
 
@@ -450,14 +450,14 @@ The break-even point: the local path is cheaper than $22,080 whenever R is above
 | Weekly embedding | 1 GPU-hour per week × 4.33 × $1.006 | $4.36 | $4.36 |
 | Weekly title and abstract translation, hosted | 10,000 × 30% × 736 = 2,208,000 characters per week, × 4.33 = 9,560,640, × $10 per million | $95.61 | $95.61 |
 | Translation on display, hosted (A9) | 1,000 × 30 × 3 × 500 = 45,000,000 characters × $10 per million | $450.00 | $450.00 |
-| Raw file store | 10,000,000 × 25.1 kB = 251 GB × $0.023 | $5.77 | $5.77 |
-| **Total per month** | | **$3,829.02** | **$9,784.02** |
+| Raw file store | 10,000,000 × 25.2 kB = 252 GB × $0.023 | $5.80 | $5.80 |
+| **Total per month** | | **$3,829.05** | **$9,784.05** |
 
 Notes on these lines:
 
 - Weekly incremental cost is the two "weekly" lines: $1.006 + 2,208,000 characters × $10 per million = $1.006 + $22.08 = $23.09 per week.
-- Weekly embedding work is small: 10,000 × 17.4 = 174,000 vectors (174 s at 1,000 per second, 12.7 minutes at laptop speed), or 512,000 vectors in phase 2 (37.3 minutes at laptop speed). One GPU-hour covers both with start-up time.
-- The six lines below "Database storage" add up to $794.02 in both phases.
+- Weekly embedding work is small: 10,000 × 17.4 = 174,000 vectors (174 s at 1,000 per second, 21.0 minutes at the slowest laptop speed), or 512,000 vectors in phase 2 (61.8 minutes at the slowest laptop speed). One GPU-hour covers either at the assumed speed, with start-up time. At the slowest laptop speed phase 2 would need a second hour.
+- The six lines below "Database storage" add up to $794.05 in both phases.
 - Query load is assumed low (A9: 1,000 searches per day). Query encoding on a CPU is not measured. The 14 ms figure is from the laptop.
 - Query translation (section 4.4) is not a separate line. It runs on the local model on the search machines. If it were sent to the hosted service instead: 1,000 searches × 30 days × 100 characters × 5 languages = 15,000,000 characters × $10 per million = $150 per month (assumption: 100 character queries, 5 foreign languages). Translation speed on a 2 virtual CPU machine is not measured.
 - Not costed: load balancer, network transfer, monitoring. Assumption: under $50 per month together.
@@ -467,7 +467,7 @@ Two alternatives that change the largest line:
 
 | Alternative | Arithmetic | Phase 1 per month | Phase 2 per month |
 | --- | --- | --- | --- |
-| Phase 2 without an approximate index on descriptions (section 8, first row) | Same 256 GiB instance. Disk 340.0 + 397.3 + 200.4 = 937.7 GB, provision 1,300 GB = $149.50 | | $2,920.00 + $149.50 + $794.02 = **$3,863.52** |
+| Phase 2 without an approximate index on descriptions (section 8, first row) | Same 256 GiB instance. Disk 340.3 + 397.3 + 200.4 = 938.0 GB, provision 1,300 GB = $149.50 | | $2,920.00 + $149.50 + $794.05 = **$3,863.55** |
 | Self-run PostgreSQL on rented machines instead of managed | $2.016 × 730 + 1,000 GB × $0.08. $6.048 × 730 + 2,000 GB × $0.08 | $1,551.68 instead of $3,035.00 | $4,575.04 instead of $8,990.00 |
 
 Self-run saves $1,483.32 per month in phase 1. It costs you backups, upgrades and failover done by hand. Managed is the better start for a small team.
@@ -478,8 +478,8 @@ Self-run saves $1,483.32 per month in phase 1. It costs you backups, upgrades an
 | --- | --- | --- |
 | One-time, hosted translation | $48.62 + $6.96 + $3,035.00 + $22,080.00 = **$25,170.58** | Phase 1 plus $94.45 = **$25,265.03** |
 | One-time, local translation | $3,090.58 + $1,377 = about $4,468 at the slowest measured rate (section 7.4) | about $4,562 |
-| Monthly | **$3,829.02** | **$9,784.02**, or $3,863.52 without an approximate index on descriptions |
-| First year (one-time plus 12 months) | $25,170.58 + 12 × $3,829.02 = $71,118.82 | Depends on when phase 2 starts |
+| Monthly | **$3,829.05** | **$9,784.05**, or $3,863.55 without an approximate index on descriptions |
+| First year (one-time plus 12 months) | $25,170.58 + 12 × $3,829.05 = $71,119.18 | Depends on when phase 2 starts |
 
 ### 7.7 Sensitivity: the three assumptions that move the total most
 
@@ -487,7 +487,7 @@ Self-run saves $1,483.32 per month in phase 1. It costs you backups, upgrades an
 2. **Index size per vector and which vectors get an index (A5, A6).** This decides the database instance, the largest monthly line: $2,920 against $8,760. If the real index is 2.0 times the vector bytes instead of 1.5, phase 1 needs 174,000,000 × 1,536 B × 1.25 = 334 GB, which no longer fits in 256 GiB, and the instance line roughly doubles.
 3. **Shape of the corpus (A1).** 17.4 and 51.2 vectors per patent come from 640 US applications in one technical field. Chemistry and biotechnology patents have much longer descriptions. If the average description is twice as long, phase 2 grows to about 850 million vectors and its memory with it. Phase 1 moves less, because it depends on the number of claims.
 
-What barely matters: GPU speed (A4). Even at laptop speed, embedding phase 1 costs $212.33.
+What barely matters: GPU speed (A4). Even at the slowest laptop speed, embedding phase 1 costs $352.34.
 
 ### 7.8 Price sources
 
@@ -510,7 +510,7 @@ Date checked: 16 November 2026. Region: US East (N. Virginia) unless stated. All
 | Text translation, standard | Amazon Translate | $15 per million characters | [aws.amazon.com/translate/pricing](https://aws.amazon.com/translate/pricing/) | Yes |
 | Text translation, standard model | Google Cloud Translation | $20 per million characters | [cloud.google.com/translate/pricing](https://cloud.google.com/translate/pricing) | **No.** The page did not load in my tool. Figure taken from a search summary of that page |
 
-Check the three RDS rows in the AWS pricing calculator before anyone approves a budget. They carry $3,035.00 of the $3,829.02 monthly total in phase 1.
+Check the three RDS rows in the AWS pricing calculator before anyone approves a budget. They carry $3,035.00 of the $3,829.05 monthly total in phase 1.
 
 ## 8. Major challenges at scale
 
@@ -518,8 +518,8 @@ Check the three RDS rows in the AWS pricing calculator before anyone approves a 
 | --- | --- | --- |
 | Vector index memory | HNSW follows random links. If the index is not in memory, every hop is a disk read and a query takes seconds. The index is about 200 GB in phase 1 and about 590 GB in phase 2, which triples the instance price | Half precision (done). In phase 2, do not index descriptions. Score description vectors exactly, only for patents that a selective filter kept or that the abstract and claim search already found. Cost: a patent whose only relevant text is deep in its description can be missed. If more is needed later, pgvector can index 1 bit per number and re-rank with the stored vectors |
 | Filtered approximate search loses recall | The index returns the nearest 500 passages overall. If a filter passes 0.1% of patents, almost none of the 500 survive, and good matches are never seen. Already seen on 640 patents: 6 of 10 correct results (section 4.3) | The route rule in section 4.3: exact search below about 1 million surviving vectors. Above that, pgvector's iterative scan keeps reading the index until enough rows pass. The middle (a filter that keeps a few percent) stays the weak spot: log the route, the survivor count and the result count for every query, and partition by the most used filter if the logs show a problem |
-| Re-embedding when the model changes | Vectors from two models cannot be mixed. Every vector must be recomputed and every index rebuilt. The compute is cheap ($48.62 for phase 1). The index build and the switch are the hard part | `embedding_model` on every row. Add a second column, fill it in the background with the same worker, build its index, switch the search service by configuration, drop the old column. Needs about 335 GB of extra disk for phase 1 while both exist |
-| Uneven quality across languages | Measured in Part 1 (`eval_results.md`). With one query vector for all languages, the right German or Chinese patent ranked below hundreds of English ones: mean reciprocal rank 0.007 and 0.003, against 0.930 for English. Translating the query and merging raw scores swung the other way: Chinese patents pushed English ones out. With the query translated and scores calibrated per language (section 4.4), German is 2 to 4 points behind English and Chinese clearly behind (0.801 against 0.945 for a foreign patent among English ones), on machine translated test patents, which flatter the method. Language is detected once per patent | Query translation with calibration as in section 4.4. Build a test per language from patent families: the same invention in two languages should find each other, with human-written text on both sides. Run both kinds of test every day: is a foreign patent found, and does adding foreign patents hurt the others. Fit the calibration on those real pairs instead of estimating it per query |
+| Re-embedding when the model changes | Vectors from two models cannot be mixed. Every vector must be recomputed and every index rebuilt. The compute is cheap ($48.62 for phase 1). The index build and the switch are the hard part | `embedding_model` on every row. Add a second column, fill it in the background with the same worker, build its index, switch the search service by configuration, drop the old column. Needs about 335 GB of extra disk for phase 1 while both exist. That is 675.7 + 335.4 = 1,011 GB, more than the 1,000 GB provisioned, so grow the disk to 1,300 GB first (300 GB × $0.115 = $34.50 more a month; a managed disk can grow but not shrink) |
+| Uneven quality across languages | Measured in Part 1 (`eval_results.md`). With one query vector for all languages, the right German or Chinese patent ranked below hundreds of English ones: mean reciprocal rank 0.007 and 0.003, against 0.930 for English. Translating the query and merging raw scores swung the other way: Chinese patents pushed English ones out. With the query translated and scores calibrated per language (section 4.4), German is 2 to 4 points behind English and Chinese clearly behind (0.792 against 0.930 for a foreign patent among English ones), on machine translated test patents, which flatter the method. Language is detected once per patent | Query translation with calibration as in section 4.4. Build a test per language from patent families: the same invention in two languages should find each other, with human-written text on both sides. Run both kinds of test every day: is a foreign patent found, and does adding foreign patents hurt the others. Fit the calibration on those real pairs instead of estimating it per query |
 | The same invention in several languages | One invention filed in four offices fills four of ten result slots | Store `family_id` and group results by it, showing the best member and a count. The sample files have no family field, so this needs another data source, which is not designed here. Without it, the only fallback is to merge results whose abstract vectors are almost identical, with a threshold that must be measured |
 | Long index build times | Building HNSW over 174 million vectors takes many hours and probably days (section 4.2, step 6). It is far slower if the graph does not fit in `maintenance_work_mem`. A slow build makes every model change and every recovery slow | Build after the bulk load. Build one partition at a time. Measure at 1 million and 10 million vectors and extrapolate before the real run. Rent a larger instance for the build only. Weekly additions (174,000 to 512,000 vectors) go into the existing index and need no rebuild |
 | Input longer than the model reads | The model reads 512 tokens and silently ignores the rest. Measured: 6 of 32,772 vectors (0.018%) even after cutting into windows. At 512 million vectors that is about 94,000 vectors with a lost tail | Keep the windows. Count truncated windows every week (Part 1's `count_truncated`). Then cut by token count instead of character count, so the count becomes zero. The 400 character window for Chinese, Japanese and Korean has not been tested on real foreign data |

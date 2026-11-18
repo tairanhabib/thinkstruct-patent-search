@@ -23,15 +23,15 @@ Candidates are only the 100 test patents in one language. With one language in p
 | semantic, shared space | English | 0.97 | 1.00 | 0.982 |  |  |
 | semantic, shared space | German | 0.33 | 0.76 | 0.459 | -0.523 | -0.598 to -0.445 |
 | semantic, shared space | Chinese | 0.05 | 0.60 | 0.227 | -0.755 | -0.799 to -0.704 |
-| semantic, query translated | English | 0.97 | 1.00 | 0.982 |  |  |
-| semantic, query translated | German | 0.94 | 1.00 | 0.964 | -0.018 | -0.046 to +0.011 |
-| semantic, query translated | Chinese | 0.91 | 1.00 | 0.945 | -0.037 | -0.075 to -0.001 |
-| hybrid, shared space | English | 0.98 | 1.00 | 0.990 |  |  |
-| hybrid, shared space | German | 0.70 | 0.97 | 0.808 | -0.182 | -0.242 to -0.126 |
-| hybrid, shared space | Chinese | 0.57 | 0.96 | 0.700 | -0.290 | -0.362 to -0.225 |
-| hybrid, query translated (default) | English | 0.98 | 1.00 | 0.990 |  |  |
-| hybrid, query translated (default) | German | 0.95 | 1.00 | 0.972 | -0.018 | -0.038 to -0.003 |
-| hybrid, query translated (default) | Chinese | 0.94 | 1.00 | 0.966 | -0.024 | -0.046 to -0.005 |
+| semantic, query translated (default) | English | 0.97 | 1.00 | 0.982 |  |  |
+| semantic, query translated (default) | German | 0.94 | 1.00 | 0.964 | -0.018 | -0.046 to +0.011 |
+| semantic, query translated (default) | Chinese | 0.91 | 1.00 | 0.945 | -0.037 | -0.075 to -0.001 |
+| hybrid, shared space | English | 0.97 | 1.00 | 0.982 |  |  |
+| hybrid, shared space | German | 0.35 | 0.76 | 0.471 | -0.511 | -0.586 to -0.433 |
+| hybrid, shared space | Chinese | 0.07 | 0.60 | 0.241 | -0.741 | -0.788 to -0.685 |
+| hybrid, query translated | English | 0.97 | 1.00 | 0.982 |  |  |
+| hybrid, query translated | German | 0.95 | 1.00 | 0.969 | -0.013 | -0.041 to +0.014 |
+| hybrid, query translated | Chinese | 0.92 | 1.00 | 0.950 | -0.032 | -0.068 to +0.003 |
 
 ## 2. Mixed: is a foreign patent found among English ones?
 
@@ -48,18 +48,18 @@ Candidates are the 100 test patents in one language plus the 540 other English p
 | semantic, query translated, raw scores | English | 0.89 | 0.99 | 0.930 |  |  |
 | semantic, query translated, raw scores | German | 0.87 | 0.99 | 0.912 | -0.019 | -0.066 to +0.027 |
 | semantic, query translated, raw scores | Chinese | 0.89 | 1.00 | 0.935 | +0.004 | -0.037 to +0.048 |
-| semantic, query translated, calibrated | English | 0.89 | 0.99 | 0.930 |  |  |
-| semantic, query translated, calibrated | German | 0.84 | 0.98 | 0.890 | -0.040 | -0.084 to +0.001 |
-| semantic, query translated, calibrated | Chinese | 0.70 | 0.96 | 0.792 | -0.139 | -0.193 to -0.089 |
-| hybrid, shared space | English | 0.90 | 1.00 | 0.945 |  |  |
-| hybrid, shared space | German | 0.00 | 0.16 | 0.059 | -0.886 | -0.918 to -0.850 |
-| hybrid, shared space | Chinese | 0.00 | 0.03 | 0.034 | -0.911 | -0.941 to -0.875 |
-| hybrid, query translated, raw scores | English | 0.90 | 1.00 | 0.945 |  |  |
-| hybrid, query translated, raw scores | German | 0.88 | 0.99 | 0.921 | -0.023 | -0.059 to +0.009 |
-| hybrid, query translated, raw scores | Chinese | 0.89 | 0.99 | 0.931 | -0.013 | -0.056 to +0.027 |
-| hybrid, query translated, calibrated (default) | English | 0.90 | 1.00 | 0.945 |  |  |
-| hybrid, query translated, calibrated (default) | German | 0.86 | 0.99 | 0.908 | -0.037 | -0.073 to -0.002 |
-| hybrid, query translated, calibrated (default) | Chinese | 0.71 | 0.96 | 0.801 | -0.143 | -0.200 to -0.091 |
+| semantic, query translated, calibrated (default) | English | 0.89 | 0.99 | 0.930 |  |  |
+| semantic, query translated, calibrated (default) | German | 0.84 | 0.98 | 0.890 | -0.040 | -0.084 to +0.001 |
+| semantic, query translated, calibrated (default) | Chinese | 0.70 | 0.96 | 0.792 | -0.139 | -0.193 to -0.089 |
+| hybrid, shared space | English | 0.90 | 0.99 | 0.935 |  |  |
+| hybrid, shared space | German | 0.00 | 0.00 | 0.007 | -0.928 | -0.965 to -0.888 |
+| hybrid, shared space | Chinese | 0.00 | 0.00 | 0.003 | -0.932 | -0.969 to -0.892 |
+| hybrid, query translated, raw scores | English | 0.90 | 0.99 | 0.935 |  |  |
+| hybrid, query translated, raw scores | German | 0.88 | 0.99 | 0.920 | -0.016 | -0.062 to +0.030 |
+| hybrid, query translated, raw scores | Chinese | 0.92 | 1.00 | 0.950 | +0.015 | -0.025 to +0.059 |
+| hybrid, query translated, calibrated | English | 0.90 | 0.99 | 0.935 |  |  |
+| hybrid, query translated, calibrated | German | 0.85 | 0.98 | 0.897 | -0.038 | -0.081 to +0.002 |
+| hybrid, query translated, calibrated | Chinese | 0.70 | 0.96 | 0.793 | -0.142 | -0.198 to -0.092 |
 
 ## 3. Does adding foreign patents hurt English search?
 
@@ -73,18 +73,18 @@ The target is the English original. Candidates are all 640 English patents plus 
 | semantic, query translated, raw scores | none | 0.89 | 0.99 | 0.930 |  |  |
 | semantic, query translated, raw scores | German | 0.88 | 0.99 | 0.919 | -0.011 | -0.024 to -0.001 |
 | semantic, query translated, raw scores | Chinese | 0.67 | 0.84 | 0.730 | -0.200 | -0.271 to -0.138 |
-| semantic, query translated, calibrated | none | 0.89 | 0.99 | 0.930 |  |  |
-| semantic, query translated, calibrated | German | 0.89 | 0.98 | 0.930 | -0.001 | -0.002 to +0.000 |
-| semantic, query translated, calibrated | Chinese | 0.87 | 0.99 | 0.920 | -0.010 | -0.025 to +0.000 |
-| hybrid, shared space | none | 0.90 | 1.00 | 0.945 |  |  |
-| hybrid, shared space | German | 0.91 | 1.00 | 0.947 | +0.002 | -0.007 to +0.015 |
-| hybrid, shared space | Chinese | 0.91 | 1.00 | 0.950 | +0.005 | +0.000 to +0.015 |
-| hybrid, query translated, raw scores | none | 0.90 | 1.00 | 0.945 |  |  |
-| hybrid, query translated, raw scores | German | 0.92 | 1.00 | 0.953 | +0.008 | -0.003 to +0.023 |
-| hybrid, query translated, raw scores | Chinese | 0.85 | 1.00 | 0.908 | -0.037 | -0.074 to -0.004 |
-| hybrid, query translated, calibrated (default) | none | 0.90 | 1.00 | 0.945 |  |  |
-| hybrid, query translated, calibrated (default) | German | 0.91 | 1.00 | 0.945 | +0.001 | -0.008 to +0.013 |
-| hybrid, query translated, calibrated (default) | Chinese | 0.91 | 1.00 | 0.950 | +0.005 | +0.000 to +0.015 |
+| semantic, query translated, calibrated (default) | none | 0.89 | 0.99 | 0.930 |  |  |
+| semantic, query translated, calibrated (default) | German | 0.89 | 0.98 | 0.930 | -0.001 | -0.002 to +0.000 |
+| semantic, query translated, calibrated (default) | Chinese | 0.87 | 0.99 | 0.920 | -0.010 | -0.025 to +0.000 |
+| hybrid, shared space | none | 0.90 | 0.99 | 0.935 |  |  |
+| hybrid, shared space | German | 0.90 | 0.99 | 0.935 | +0.000 | +0.000 to +0.000 |
+| hybrid, shared space | Chinese | 0.90 | 0.99 | 0.935 | +0.000 | +0.000 to +0.000 |
+| hybrid, query translated, raw scores | none | 0.90 | 0.99 | 0.935 |  |  |
+| hybrid, query translated, raw scores | German | 0.88 | 0.99 | 0.919 | -0.016 | -0.033 to -0.003 |
+| hybrid, query translated, raw scores | Chinese | 0.67 | 0.87 | 0.733 | -0.202 | -0.272 to -0.141 |
+| hybrid, query translated, calibrated | none | 0.90 | 0.99 | 0.935 |  |  |
+| hybrid, query translated, calibrated | German | 0.89 | 0.98 | 0.930 | -0.006 | -0.016 to +0.000 |
+| hybrid, query translated, calibrated | Chinese | 0.89 | 0.99 | 0.930 | -0.005 | -0.015 to +0.000 |
 
 ## 4. Short queries: are the languages treated alike?
 
@@ -94,10 +94,10 @@ The 20 short English queries of the benchmark, top 10 results each, over all 840
 | --- | --- | --- | --- | --- |
 | semantic, shared space | 27 | 0 | 0 | 173 |
 | semantic, query translated, raw scores | 4 | 2 | 154 | 40 |
-| semantic, query translated, calibrated | 19 | 40 | 18 | 123 |
-| hybrid, shared space | 29 | 0 | 0 | 171 |
-| hybrid, query translated, raw scores | 16 | 8 | 65 | 111 |
-| hybrid, query translated, calibrated (default) | 24 | 20 | 9 | 147 |
+| semantic, query translated, calibrated (default) | 19 | 40 | 18 | 123 |
+| hybrid, shared space | 26 | 0 | 0 | 174 |
+| hybrid, query translated, raw scores | 4 | 2 | 153 | 41 |
+| hybrid, query translated, calibrated | 19 | 39 | 17 | 125 |
 
 ## 5. Foreign query, English patents
 
@@ -108,15 +108,15 @@ The query is the first claim of the translated copy. Candidates are all 640 orig
 | semantic, shared space | English | 0.89 | 0.99 | 0.930 |  |  | 100 of 100 |
 | semantic, shared space | German | 0.51 | 0.74 | 0.591 | -0.339 | -0.419 to -0.260 | 100 of 100 |
 | semantic, shared space | Chinese | 0.01 | 0.12 | 0.051 | -0.879 | -0.922 to -0.833 | 100 of 100 |
-| semantic, query translated | English | 0.89 | 0.99 | 0.930 |  |  | 100 of 100 |
-| semantic, query translated | German | 0.87 | 0.96 | 0.900 | -0.031 | -0.068 to +0.002 | 100 of 100 |
-| semantic, query translated | Chinese | 0.72 | 0.94 | 0.824 | -0.106 | -0.164 to -0.053 | 100 of 100 |
-| hybrid, shared space | English | 0.90 | 1.00 | 0.945 |  |  | 100 of 100 |
-| hybrid, shared space | German | 0.55 | 0.81 | 0.642 | -0.302 | -0.387 to -0.227 | 100 of 100 |
-| hybrid, shared space | Chinese | 0.06 | 0.20 | 0.110 | -0.835 | -0.887 to -0.780 | 100 of 100 |
-| hybrid, query translated (default) | English | 0.90 | 1.00 | 0.945 |  |  | 100 of 100 |
-| hybrid, query translated (default) | German | 0.87 | 0.98 | 0.917 | -0.028 | -0.056 to -0.006 | 100 of 100 |
-| hybrid, query translated (default) | Chinese | 0.84 | 0.98 | 0.895 | -0.050 | -0.095 to -0.009 | 100 of 100 |
+| semantic, query translated (default) | English | 0.89 | 0.99 | 0.930 |  |  | 100 of 100 |
+| semantic, query translated (default) | German | 0.87 | 0.96 | 0.900 | -0.031 | -0.068 to +0.002 | 100 of 100 |
+| semantic, query translated (default) | Chinese | 0.72 | 0.94 | 0.824 | -0.106 | -0.164 to -0.053 | 100 of 100 |
+| hybrid, shared space | English | 0.90 | 0.99 | 0.935 |  |  | 100 of 100 |
+| hybrid, shared space | German | 0.52 | 0.74 | 0.599 | -0.336 | -0.413 to -0.259 | 100 of 100 |
+| hybrid, shared space | Chinese | 0.01 | 0.12 | 0.052 | -0.884 | -0.925 to -0.838 | 100 of 100 |
+| hybrid, query translated | English | 0.90 | 0.99 | 0.935 |  |  | 100 of 100 |
+| hybrid, query translated | German | 0.87 | 0.96 | 0.900 | -0.035 | -0.073 to -0.001 | 100 of 100 |
+| hybrid, query translated | Chinese | 0.78 | 0.94 | 0.855 | -0.081 | -0.138 to -0.029 | 100 of 100 |
 
 ## What query translation costs per query
 
@@ -124,10 +124,10 @@ Translating one claim-length query (median 667 characters) into 2 languages (de,
 
 | | Median | Slowest |
 | --- | --- | --- |
-| Not cached, models already loaded (10 queries, one at a time) | 1224 ms | 3056 ms |
-| Cache hit: the translation step inside `search()` in the tables above | 0.05 ms | 1.20 ms |
+| Not cached, models already loaded (10 queries, one at a time) | 1278 ms | 3242 ms |
+| Cache hit: the translation step inside `search()` in the tables above | 0.07 ms | 0.90 ms |
 
-All queries were translated in bulk before the tables above were computed: 264,465 characters in 45 s (5,814 characters per second).
+All queries were translated in bulk before the tables above were computed: 264,465 characters in 51 s (5,218 characters per second).
 
 ## Why the shared space fails: language bias
 

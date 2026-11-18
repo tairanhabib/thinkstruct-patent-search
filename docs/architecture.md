@@ -1,6 +1,6 @@
 # Architecture
 
-One picture of the whole project. Solid arrows are data moving. Dotted arrows are "measures" or "is a model of".
+One picture of the whole project. Solid arrows are data moving. Dotted arrows are "measures" or "is a model of". Inside the search box, dotted arrows are steps taken only with `--mode keyword` or `--mode hybrid`: the default search is semantic.
 
 ```mermaid
 flowchart TD
@@ -26,7 +26,7 @@ flowchart TD
     foreign -.-> norm
 
     subgraph IDX["Index directory: index/"]
-        db[("patents.db (SQLite)<br/>patents, passages, classifications<br/>full text index on English title and abstract<br/>translation cache")]
+        db[("patents.db (SQLite)<br/>patents, passages, classifications<br/>two full text indexes on English title and abstract<br/>(stemmed for ranking, whole words for the keyword filter)<br/>translation cache")]
         vec[("embeddings.npy<br/>one normalized vector per passage window")]
     end
     tr1 --> db
@@ -37,11 +37,12 @@ flowchart TD
         filt["1. filters in SQL<br/>classification prefix, keywords, title,<br/>dates, language, passage type"]
         tq["2. translate the query<br/>into each language that survived<br/>(short, cached)"]
         sem["3. score each passage against the query<br/>in its own language, on one scale<br/>best passage per patent"]
-        kw["4. keyword ranking (BM25)<br/>English title and abstract"]
-        rrf["5. reciprocal rank fusion"]
+        kw["4. keyword ranking (BM25)<br/>English title and abstract<br/>only with --mode keyword or hybrid"]
+        rrf["5. reciprocal rank fusion<br/>only with --mode hybrid,<br/>keyword list weighted 0.02"]
         show["6. show in English<br/>translate displayed passages on demand, cache"]
-        q --> filt --> tq --> sem --> rrf --> show
-        tq --> kw --> rrf
+        q --> filt --> tq --> sem --> show
+        sem -.-> rrf -.-> show
+        tq -.-> kw -.-> rrf
     end
     db --> filt
     db --> kw
@@ -52,7 +53,7 @@ flowchart TD
     subgraph MEAS["Measurement"]
         bench["scripts/benchmark.py<br/>benchmarks.md"]
         evalm["scripts/evaluate_multilingual.py<br/>scripts/compare_models.py<br/>eval_results.md"]
-        tests["tests/<br/>missing fields, filters, claims"]
+        tests["tests/ and scripts/testing/<br/>missing fields, filters, claims,<br/>and the independent test pass"]
     end
     bench -.-> SRCH
     evalm -.-> SRCH
@@ -75,7 +76,7 @@ flowchart TD
 | Field normalization, claim parsing, missing field handling | `src/ingest.py` |
 | Embedding model, windows, vector files | `src/embed.py` |
 | Language detection, translation, cache | `src/translate.py` |
-| Filters, query translation, ranking, fusion | `src/search.py` |
+| Filters, query translation, semantic ranking (default), optional keyword ranking and fusion | `src/search.py` |
 | Command line and display | `cli.py` |
 | Timing | `scripts/benchmark.py` |
 | Synthetic German and Chinese set | `scripts/make_parallel_set.py` |

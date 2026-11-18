@@ -278,7 +278,7 @@ Headline numbers (US dollars, prices checked 16 November 2026):
 | | Phase 1: abstract and claims, 174 million vectors | Phase 2: full text, 512 million vectors |
 | --- | --- | --- |
 | One-time, hosted translation of title and abstract | $25,170.58, of which $22,080 is translation | $25,265.03 |
-| Monthly | $3,829.02 | $9,784.02, or $3,863.52 if descriptions get no approximate index |
+| Monthly | $3,829.05 | $9,784.05, or $3,863.55 if descriptions get no approximate index |
 | Embedding all of it on a rented GPU | $48.62 (48.3 GPU hours) | $94.45 more |
 | Translating all full text up front instead (rejected) | $720,000 | |
 
@@ -703,3 +703,199 @@ The evaluation was honest about being synthetic and still wrong about the conclu
 the question. I did not find that by reviewing the numbers or by the independent review. I found it by typing a query.
 The test that would have caught it is now in the evaluation, and both README demonstrations were re-chosen: the old
 pair (a Chinese patent appearing at rank 3) was itself an example of the bias.
+
+## Independent test pass, and what it changed (17 November 2026)
+
+An independent tester ran a full test pass on commit `8afc1df` and changed nothing under `src/`. The report is
+`TEST_REPORT.md`, the work list `TEST_RESULTS_FOR_BUILDER.md`, the scripts and results are in `scripts/testing/`, and
+three test files went into `tests/` (429 tests, 12 of them failing when they arrived). Verdict: ready with fixes.
+This section is what I did with each item, in the order worked, one commit per step. Earlier sections of this file
+describe the project as it was before; where a number below disagrees with one above, the one below is current.
+
+### M4. The keyword filter passed patents that do not contain the keyword
+
+- Found: `--keywords generator` passed 27 patents, one of which contains the word. The filter and the ranking shared one
+  stemmed full text table, and the stemmer files generator, general, generally and generic under one stem.
+- **Ruling:** a second full text table without stemming (`patents_words`), read only by the filter. The filter matches
+  the word, or its plain plural or singular ("sensor" passes "sensors"), and nothing wider. Ranking keeps the stemmed
+  table. Cost if wrong: a user who expects "bearing" to pass "bears" no longer gets that from the filter.
+- **Ruling:** an index built before this change is filled the first time it is opened. The tester suggested a rebuild
+  and a README note. Filling it costs four lines and removes the chance that an old index silently passes nothing.
+- Measured on the 840 patent index: `generator` now passes 3 patents (the same invention in three languages), all
+  containing the word. `general` passes none.
+- Test renamed from `..._uses_word_stems` to `..._matches_whole_words`, with the new behaviour in it.
+
+### M1. Hybrid, the default, was worse than the better single mode on all four known-answer tests
+
+- Found (tester's `backtest.py`, 200 queries per test, MRR): hybrid was behind the better of keyword-only and
+  semantic-only by 4, 60, 4 and 4 points. Cause: the keyword list reads only title and abstract and had the same vote
+  as the passage-level list.
+- Done: a weight for the keyword list in the fusion (`KEYWORD_WEIGHT`), swept on tests A and B with
+  `scripts/tune_keyword_weight.py` (table in `scripts/testing/results/keyword_weight_sweep.md`):
+
+| Keyword weight | A: claim 1 to patent | B: abstract to claims | C: title to patent | D: dependent claim to patent |
+| --- | --- | --- | --- | --- |
+| keyword only | 0.931 | 0.208 | 0.760 | 0.701 |
+| semantic only | 0.873 | 0.970 | 0.958 | 0.887 |
+| 1.0 (what shipped) | 0.889 | 0.374 | 0.917 | 0.844 |
+| 0.5 | 0.888 | 0.427 | 0.947 | 0.858 |
+| 0.2 | 0.890 | 0.518 | 0.962 | 0.885 |
+| 0.1 | 0.887 | 0.615 | 0.963 | 0.894 |
+| 0.05 | 0.884 | 0.735 | 0.960 | 0.891 |
+| 0.02 | 0.878 | 0.896 | 0.958 | 0.889 |
+| 0.01 and below | 0.873 | 0.970 | 0.958 | 0.887 |
+
+- The sweep ran before the m4 fix. On the final code (`results/backtest_english_after_fixes.json`, run in the fresh
+  clone) A, B and D are unchanged and C is 0.963 for semantic and for hybrid, because titles in capitals are no longer
+  taken for another language and sent through a translator. Hybrid minus the better single mode, final: A -0.052
+  (interval -0.089 to -0.017), B -0.074 (-0.097 to -0.051), C 0.000, D +0.002.
+- What it says: the smaller the weight, the better on B, and nothing gained on A (hybrid never exceeds 0.892 there,
+  against 0.931 for keywords alone). From 0.01 down the fused ranking is the semantic ranking. No weight is within
+  2 points of the better single mode on all four tests.
+- **Ruling (the rule was given to me: if no weight gets within 2 points, semantic becomes the default):** semantic is
+  the default mode in `search()` and on the command line. Hybrid stays as an option at 0.02, the largest weight that
+  stays near the best worst case and still changes results (21 of 50 test queries get a different top ten than semantic).
+  Cost if wrong: see "fresh queries" below, where the old default looks better on one subset.
+- Consequence I had not planned for: a patent with no passage long enough to embed (a title only) cannot be returned by
+  the default search, because semantic search ranks passages. Keyword and hybrid mode and the filters still find it. No
+  real patent is in that state (0 of 840). A test now states this behaviour.
+- Consequence for Part 3: the default's numbers are the semantic rows of `eval_results.md`, a little lower than the
+  hybrid rows I reported before (English 0.930, was 0.945), and the short-query balance is worse (German versions 40,
+  English 19, Chinese 18, where the old default had 20, 24 and 9).
+- Tests that encoded the equal vote were changed, each with a comment saying why: the fused score, the fused top 3,
+  the reciprocal rank formula, and "something from both lists reaches the top ten", which is now "hybrid is the
+  semantic list with keyword matches moved up a little".
+
+### M3. The tool never says it found nothing
+
+- Done: a query with no letters or digits is refused, like an empty one.
+- Measured (`scripts/testing/offtopic_check.py`, 30 queries, 5 of them off topic): how far the best result stands
+  above the per-query background sample that calibration already scores. Off-topic queries: 4.0 to 5.2 spreads. Real
+  queries: 2.9 to 6.2. 22 of the 25 real queries are at or below the highest off-topic one. Plain similarity separates
+  better (off-topic 0.826 to 0.848, real 0.839 to 0.924) and still overlaps, on 5 examples.
+- **Ruling:** no warning. A threshold set on five examples with overlapping ranges would be a guess. Written up as a
+  limitation.
+
+### M5. Two filters scanned every patent, and the headline speed-up left the filter's cost out
+
+- Done: the classification filter is a range on the code index. `EXPLAIN QUERY PLAN` before: `SCAN p`. After:
+  `SEARCH p USING INTEGER PRIMARY KEY` with `SEARCH classifications USING INDEX idx_classifications_code (code>? AND code<?)`.
+  A test reads the plan of the statement the search really runs.
+- Done: `benchmarks.md` has a third part, the whole search on a real index 10 times the size (built with the tester's
+  `perf.py scale`), and every filter row shows the time of its SQL filter alone.
+- Measured at 10 times the size: the 1% title filter is 2.1 times faster than filtering afterwards (7.84 ms against
+  16.22 ms), not 13. Its SQL scan takes 6.44 ms of that, 24 times its time on the real index. The 2.9% classification
+  filter, now on an index, is 3.2 times faster (3.22 ms against 10.45 ms) with 0.32 ms of SQL.
+- Not done: the title filter is still a scan. The README says what it costs. The scale design uses a trigram index.
+
+### Minors
+
+| Item | What changed |
+| --- | --- |
+| m1 | `similar --claim 999` says "abstract (claim 999 not found or too short)" where it used to fall back silently |
+| m2 | `--top 0` or less is refused. `-1` used to return everything but the last result |
+| m3 | A keyword filter with no letters or digits is refused. So is such a classification filter |
+| m4 | Text in capitals is lower-cased before language detection: of the 640 English titles typed as queries, 41 were taken for German, Vietnamese or Somali, now none. At ingest a title is only used when there is no other text, and must then pass the stricter test used for queries: 15 of 640 were still labelled foreign with the usual one, none with the stricter one |
+| m5 | A null inside a classification list is no longer stored as the code `NONE` |
+| m6 | The ingest log names each patent that has no searchable text |
+| m8 | The README's `--show-original` example now has `--language zh`, so it prints original text |
+
+- **Ruling, against the tester on one point of m4:** "do not load a model for a language the index does not hold" is
+  not done. A German or Japanese query against an English index needs exactly that model, and the tester's own forward
+  test depends on it. With capitals handled, the case that triggered the download is gone.
+- The claim-number check quoted in the README was not reproducible ("1,300 of 1,335"; the tester counted 1,308 of
+  1,312). `scripts/inspect_data.py` now prints it with a stated definition: 1,335 runs of unnumbered claims followed by
+  a numbered claim, 1,331 of them as long as the gap in the numbering. My earlier count did not treat a cancelled
+  range as using up its numbers. Both recounts find 4 mismatches.
+
+### M2. Chinese and Japanese queries on fresh queries
+
+- Found: on 10 new everyday-language queries in five languages, Chinese and Japanese queries reach about half and a
+  third of the relevance of English ones. My own evaluation shows a small gap because its query is a machine
+  translation of the target's own claim.
+- Compared, as asked, three ways of handling a foreign query and beam width 4, on the 40 foreign-language queries
+  against the English patents (`scripts/testing/forward_variants.py`, mean relevance of the top 5 on a 0 to 2 scale):
+
+| Way | German | Spanish | Chinese | Japanese | All 40 | Queries with a result scored 2 | Difference to current (95% interval) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Translate, greedy (current) | 0.74 | 0.66 | 0.38 | 0.22 | 0.500 | 6 | |
+| Translate, beam width 4 | 0.76 | 0.66 | 0.46 | 0.26 | 0.535 | 9 | +0.035 (-0.010 to +0.095) |
+| Original query embedded, no translation | 0.34 | 0.56 | 0.04 | 0.58 | 0.380 | 7 | -0.120 (-0.255 to +0.030) |
+| Both fused | 0.66 | 0.66 | 0.40 | 0.48 | 0.550 | 9 | +0.050 (-0.025 to +0.130) |
+
+- **Ruling:** the default stays. Neither higher score is distinguishable from the current one on 40 queries. Beam
+  width 4 doubled the translation time of these short queries (median 240 ms against 112 ms; 3 to 5 times on a full
+  claim, measured in Phase F) and did not fix the failures it was meant to fix: "It's a very simple process." is still
+  what two Japanese queries become, and one became "It's a tire. It's a tire. It's a tire.". The fused version gains
+  only where translation fails outright (Japanese) and leans on the direct embedding, which scored 0.04 for Chinese
+  here and 0.051 MRR in my own test. Cost if wrong: about 0.04 of mean relevance on foreign queries.
+- Judging. Three blind judges (separate model instances that saw query, title and passage, not rank, language or
+  variant) scored the 465 result items the tester's judges had not seen. I hid 45 of the tester's items among them: 38
+  came back with the same score and 7 one point lower. So before and after would not have been comparable, and the same
+  judges re-scored all 365 of the tester's items: 328 identical, 37 one point apart (28 of those from 1 down to 0),
+  none two apart, mean 0.567 against the tester's 0.647. Every number in this section and in the README's fresh-query
+  subsection uses that one set (`scripts/testing/results/forward_judgments_builder.json`).
+- Before and after on the 840 patent index, same judges (mean relevance, queries of 10 with a result scored 2):
+
+| Query language | Old default (fused, equal votes) | New default (semantic) |
+| --- | --- | --- |
+| English | 0.84, 6 | 0.68, 4 |
+| German | 0.78, 4 | 0.76, 4 |
+| Spanish | 0.74, 5 | 0.70, 4 |
+| Chinese | 0.46, 2 | 0.34, 1 |
+| Japanese | 0.30, 0 | 0.24, 0 |
+
+- **What this says about M1, and I did not expect it.** The switch to semantic is not confirmed by the fresh queries.
+  All 30 English queries: 0.720 to 0.833 on the English index (+0.113, interval -0.033 to +0.267), 0.760 to 0.747 on the
+  840 patent index (-0.013, -0.153 to +0.127). The 10 general English queries on the 840 patent index: 0.84 to 0.68
+  (-0.16, interval -0.30 to -0.02). The 40 foreign queries there: 0.570 to 0.510 (-0.06, -0.14 to +0.03). Part of the
+  English loss on that index is German copies: 9 of the 50 top-five results are German versions with a mean score of
+  0.22, against 5 before. Semantic gains on misspelled queries (0.40 to 0.84 on the English index), where keywords cannot
+  match at all. I kept the rule I was given and list the default as open.
+
+### Documented, not fixed (M6, M7, m7, m9, m10, m11)
+
+All in the README: section 7 for the loss of numbers in Chinese display (38 of 100 passages keep every number) and for
+the three reasons the English baseline is easier than it reads; section 8 for letter case in semantic search, the
+"contains" title filter and keywords that are never a phrase, one result slot per language version of an invention
+(0.64 of 10 on the 840 patent index with the new default, 0.93 before), and unpinned `torch`, `transformers` and model
+files.
+
+### Document corrections
+
+Every row of the tester's table is applied. In `docs/scale_design.md`: 25.2 kB, 328.0 GB (and the sums that use it:
+340.3, 675.7, 1,327.4 and 938.0 GB), the slowest laptop embedding run is 138 vectors per second, not 229 (worst case
+$352.34 for phase 1, was $212.33), 6,067 characters per second, the benchmark figures are the ones in the committed
+`benchmarks.md`, the 1% filter row no longer contradicts the one million rule, re-embedding is said not to fit in
+1,000 GB (grow the disk to 1,300 GB first), and the per-language step filters on `patents.language`. Changing 25.1 to
+25.2 kB moves the raw file store from 251 to 252 GB and every monthly total by 3 cents ($3,829.05 and $9,784.05). The
+SQL sketch there weights the keyword list 0.02, as Part 1 now does. The tester's `check_cost_arithmetic.py` was updated
+to the corrected document and passes on all its rows.
+
+### Final numbers after these changes (regenerated, not edited)
+
+| What | Value |
+| --- | --- |
+| Tests | 525 (96 mine, 429 from the tester), about 4 s |
+| `ingest data/small` | 133.2 s, of which embedding 127.6 s (257 vectors per second) |
+| Search, 640 patents: semantic (default) / hybrid / keyword | 15.4 / 16.3 / 1.2 ms, of which encoding the query 13.7 ms |
+| 1% title filter, first against after, real index | 0.54 against 1.33 ms (2.5 times), SQL filter 0.27 ms |
+| The same on a real index 10 times the size | 7.84 against 16.22 ms (2.1 times), SQL filter 6.44 ms |
+| 2.9% classification filter, 10 times the size | 3.22 against 10.45 ms (3.2 times), SQL filter 0.32 ms |
+| Scoring step alone at 983,160 vectors, 1% filter | 2.4 against 32.5 ms (13 times). Unfiltered scan 36.3 ms (73.7 ms in the run before, same laptop, on battery with Low Power Mode on both times; I do not know why) |
+| `ingest data/parallel` | 289 s: 100,183 characters translated in 221.5 s, 11,827 vectors in 57.4 s |
+| Evaluation | 337 s |
+| Default (semantic, query translated, calibrated): right patent alone in its language, English / German / Chinese | 0.982 / 0.964 / 0.945 |
+| The same among 540 other English patents | 0.930 / 0.890 / 0.792 |
+| English search after adding that language's 100 patents | 0.930 / 0.930 / 0.920 |
+| A query in that language against the 640 English patents | 0.930 / 0.900 / 0.824 |
+| 20 short queries, versions in the top ten | 19 / 40 / 18 |
+| Query translation, claim-length, 2 languages | median 1,278 ms, slowest 3,242 ms, cache hit 0.07 ms |
+
+### Still open
+
+1. Which ranking should be the default (M1 against the fresh queries). Needs relevance judged by people on more queries.
+2. Chinese and Japanese queries. Needs a better translation model for the query.
+3. No "nothing found" signal.
+4. German copies over-represented on short queries with the semantic default (40 against 19 English).
+5. Everything that needs a person: the video, the public repository, the Docker path, the real foreign sample.
