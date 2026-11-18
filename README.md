@@ -625,7 +625,7 @@ Still open after the independent test pass:
 | `scripts/` | `inspect_data.py`, `benchmark.py`, `tune_keyword_weight.py`, `make_parallel_set.py`, `evaluate_multilingual.py`, `compare_models.py` |
 | `tests/` | 525 tests, no model needed. 96 are mine, the rest came from the independent test pass |
 | `scripts/testing/` | The independent tester's scripts and results: tests on a real index, known-answer backtest, fresh-query test, performance, cost arithmetic |
-| `TEST_REPORT.md`, `TEST_RESULTS_FOR_BUILDER.md` | The independent test report and its work list, as received |
+| `TEST_REPORT.md`, `TEST_RESULTS_FOR_BUILDER.md` | The independent test report and its work list, as received, except the commit hash they name (see `NOTES.md`) |
 | `benchmarks.md`, `eval_results.md` | Generated tables |
 | `docs/scale_design.md`, `docs/architecture.md` | Part 2 design, project diagram |
 | `poc/`, `docker-compose.yml` | Part 2 proof of concept |

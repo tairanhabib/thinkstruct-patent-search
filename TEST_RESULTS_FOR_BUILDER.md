@@ -1,6 +1,6 @@
 # Test results for the builder
 
-An independent test pass was run on commit `8afc1df` (17 November 2026). This file is the work list that came out of
+An independent test pass was run on commit `de3fe99` (17 November 2026). This file is the work list that came out of
 it. The full evidence, with every table and interval, is in [TEST_REPORT.md](TEST_REPORT.md). Nothing under `src/` was
 changed by the tester and no fix was applied.
 

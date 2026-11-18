@@ -4,7 +4,7 @@
 
 Reads results/forward_results_<tag>.json and results/forward_judgments_builder.json: every item of every run,
 the tester's 365 included, scored by one second set of blind judges, so runs can be compared with each other. The
-tags `mixed` and `english` are the tester's own runs at commit 8afc1df (hybrid search with equal votes, the default
+tags `mixed` and `english` are the tester's own runs at commit de3fe99 (hybrid search with equal votes, the default
 then). The `after_*` tags were run after the fixes. (results/forward_report_before_*.json are the tester's two runs
 re-scored with these judgments by `forward_test.py report`.) Prints, for each other tag, the mean relevance of the top 5 (0 to 2), the number of queries with a result
 scored 2, and the difference to the base tag with a 95% interval from 4,000 resamples of the queries.

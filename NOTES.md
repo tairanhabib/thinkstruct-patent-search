@@ -706,7 +706,7 @@ pair (a Chinese patent appearing at rank 3) was itself an example of the bias.
 
 ## Independent test pass, and what it changed (17 November 2026)
 
-An independent tester ran a full test pass on commit `8afc1df` and changed nothing under `src/`. The report is
+An independent tester ran a full test pass on commit `de3fe99` and changed nothing under `src/`. The report is
 `TEST_REPORT.md`, the work list `TEST_RESULTS_FOR_BUILDER.md`, the scripts and results are in `scripts/testing/`, and
 three test files went into `tests/` (429 tests, 12 of them failing when they arrived). Verdict: ready with fixes.
 This section is what I did with each item, in the order worked, one commit per step. Earlier sections of this file
@@ -902,9 +902,9 @@ to the corrected document and passes on all its rows.
 
 ### Fourth check from scratch (after the independent test pass)
 
-Fresh clone of commit `da3d6ef` (the last one that changes code), new virtual environment, every README command in
+Fresh clone of commit `98a30da` (the last one that changes code), new virtual environment, every README command in
 order in one pass, then the tester's own checks on the indexes the clone had just built. Exit code 0, 52 minutes, on
-battery with Low Power Mode on. The commits after `da3d6ef` change documents, the regenerated tables and the tester's
+battery with Low Power Mode on. The commits after `98a30da` change documents, the regenerated tables and the tester's
 arithmetic checker only.
 
 | What | Result |
@@ -925,3 +925,17 @@ arithmetic checker only.
 
 Not run in this check: the Docker path (Docker is not installed here), `compare_models.py` (optional, 5.7 GB of
 models), and the tester's `perf.py` and `translation_checks.py` (their figures in the README are the tester's own).
+
+## History rewritten once (17 November 2026)
+
+After the repository went public, the script for the video was taken out of it, including out of every earlier
+commit, because it is working material and not part of the submission. That changed the hash of 17 of the 26 commits.
+Nothing else in any commit changed: same files, same authors, same dates, same messages.
+
+| Named before | Same commit now | Where it is named |
+| --- | --- | --- |
+| `8afc1df` | `de3fe99` | The commit the independent tester ran on: this file, `TEST_REPORT.md`, `TEST_RESULTS_FOR_BUILDER.md`, `scripts/testing/forward_compare.py` |
+| `da3d6ef` | `98a30da` | The commit of the fourth check from scratch: this file |
+
+The hash is the only thing changed in the tester's two reports. No command reads the removed file, so the checks
+recorded above hold for the new commits.

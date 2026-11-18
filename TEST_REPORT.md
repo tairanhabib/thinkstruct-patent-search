@@ -1,6 +1,6 @@
 # Test report: Thinkstruct patent search take-home
 
-Independent test pass on commit `8afc1df`, run on 17 November 2026 by a test agent that did not write the code.
+Independent test pass on commit `de3fe99`, run on 17 November 2026 by a test agent that did not write the code.
 Nothing under `src/` was changed and no reported number was edited. All new test code is in `tests/test_independent_*.py`
 and `scripts/testing/`. Raw results are in `scripts/testing/results/`.
 
