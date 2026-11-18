@@ -630,4 +630,3 @@ Still open after the independent test pass:
 | `docs/scale_design.md`, `docs/architecture.md` | Part 2 design, project diagram |
 | `poc/`, `docker-compose.yml` | Part 2 proof of concept |
 | `NOTES.md`, `DECISIONS.md` | Every decision and number; the eight that matter |
-| `VIDEO_SCRIPT.md` | Talk-through of Parts 2 and 3 |
