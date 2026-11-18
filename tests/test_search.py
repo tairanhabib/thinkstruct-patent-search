@@ -301,3 +301,18 @@ def test_a_patent_with_nothing_to_embed_is_found_by_its_words_not_by_the_default
     assert docs(search("zirconium bracket", mode="keyword", index=index)) == ["D-TITLE-ONLY"]
     assert docs(search("zirconium bracket", mode="hybrid", index=index))[-1] == "D-TITLE-ONLY"  # after every scored patent
     assert docs(search(title="zirconium", index=index)) == ["D-TITLE-ONLY"]
+
+
+def test_classification_filter_searches_the_code_index_instead_of_scanning_every_patent(build_index):
+    index, _ = build_index([COMPLETE, OTHER, without(COMPLETE, doc_number="D-NINE", classification="B60B2799FI")])
+    statements = []
+    index.con.set_trace_callback(statements.append)
+    assert docs(search(cpc_prefix="B60B", index=index)) == ["D-COMPLETE", "D-NINE"]
+    index.con.set_trace_callback(None)
+    sql = next(statement for statement in statements if "classifications" in statement)
+    plan = " | ".join(row[3] for row in index.con.execute("EXPLAIN QUERY PLAN " + sql))
+    assert "idx_classifications_code" in plan and "SCAN" not in plan, plan
+    assert docs(search(cpc_prefix="B60B279", index=index)) == ["D-NINE"]  # a prefix ending in 9: the upper bound is still right
+    assert docs(search(cpc_prefix="B60B2700FI", index=index)) == ["D-COMPLETE"]
+    with pytest.raises(ValueError):
+        search(cpc_prefix=" / ", index=index)  # no letters or digits: refused, not treated as "any code"

@@ -116,10 +116,17 @@ def filter_patents(index, cpc_prefix=None, keywords=None, title=None, date_from=
 
     where, params = [], []
     if cpc_prefix:
-        has_code = "EXISTS (SELECT 1 FROM classifications c WHERE c.patent_id = p.id"
-        where.append(f"({has_code} AND c.code GLOB ?){unknown('NOT ' + has_code + ')')})")
-        params.append(re.sub(r"[^A-Z0-9]", "", cpc_prefix.upper()) + "*")  # 'b60b 1/04' and 'B60B104' both work
-    words = re.findall(r"\w+", (keywords or "").lower())  # every word counts here, common ones too
+        prefix = re.sub(r"[^A-Z0-9]", "", cpc_prefix.upper())  # 'b60b 1/04' and 'B60B104' both work
+        if not prefix:
+            raise ValueError("the classification filter has no letters or digits")
+        # A range on the code index: from the prefix up to the prefix with its last character raised by one.
+        # The earlier pattern match (GLOB inside EXISTS) read every patent, whatever the prefix.
+        where.append("(p.id IN (SELECT patent_id FROM classifications WHERE code >= ? AND code < ?)"
+                     f"{unknown('p.id NOT IN (SELECT patent_id FROM classifications)')})")
+        params += [prefix, prefix[:-1] + chr(ord(prefix[-1]) + 1)]
+    words = re.findall(r"[^\W_]+", (keywords or "").lower())  # every word counts here, common ones too
+    if keywords and not words:
+        raise ValueError("the keyword filter has no letters or digits")  # it used to be dropped without a word
     if words:
         where.append("(p.id IN (SELECT rowid FROM patents_words WHERE patents_words MATCH ?)"
                      f"{unknown('p.title IS NULL OR p.abstract IS NULL')})")
