@@ -899,3 +899,29 @@ to the corrected document and passes on all its rows.
 3. No "nothing found" signal.
 4. German copies over-represented on short queries with the semantic default (40 against 19 English).
 5. Everything that needs a person: the video, the public repository, the Docker path, the real foreign sample.
+
+### Fourth check from scratch (after the independent test pass)
+
+Fresh clone of commit `da3d6ef` (the last one that changes code), new virtual environment, every README command in
+order in one pass, then the tester's own checks on the indexes the clone had just built. Exit code 0, 52 minutes, on
+battery with Low Power Mode on. The commits after `da3d6ef` change documents, the regenerated tables and the tester's
+arithmetic checker only.
+
+| What | Result |
+| --- | --- |
+| `ingest data/small` | 2 min 44 s |
+| The four Part 1 searches, `show` | ran, results as the README describes |
+| `benchmark.py`, with the new 10 times part | 2 min 54 s |
+| `python -m pytest` | 525 passed in 4.1 s |
+| Tester's real-index tests, English index | 83 passed |
+| Tester's backtest, English index | A 0.931 / 0.873 / 0.879, B 0.208 / 0.970 / 0.896, C 0.760 / 0.963 / 0.963, D 0.701 / 0.887 / 0.889 (keyword / semantic / hybrid). Its own fusion agrees with `search()` on every query |
+| `make_parallel_set.py` | 17 min 37 s |
+| `ingest data/parallel` | 4 min 43 s |
+| `evaluate_multilingual.py` | 5 min 34 s. Every quality number identical to the committed `eval_results.md` |
+| The four Part 3 searches | same invention at ranks 1, 3 and 5; with `--cross-lingual shared` only the English one; `--language zh --show-original` prints the Chinese text |
+| Tester's real-index tests, mixed index | 83 passed |
+| Tester's backtest, mixed index | default 0.930 / 0.890 / 0.792 for an English, German, Chinese target among English patents, the same as `eval_results.md` |
+| Proof of concept, embedded PostgreSQL | exact 10 rows, approximate index 6, largest setting 8, same 10 patents in the same order as the Python search |
+
+Not run in this check: the Docker path (Docker is not installed here), `compare_models.py` (optional, 5.7 GB of
+models), and the tester's `perf.py` and `translation_checks.py` (their figures in the README are the tester's own).

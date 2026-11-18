@@ -93,7 +93,7 @@ python cli.py search "轮辋上带有压力传感器的车轮" --language zh --t
 python cli.py show --doc 20240083200-ZH
 ```
 
-- `make_parallel_set.py` machine translates 100 of the English patents into German and Chinese (about 16 minutes) and
+- `make_parallel_set.py` machine translates 100 of the English patents into German and Chinese (16 to 18 minutes) and
   writes them to `data/parallel/`. It downloads two translation models, about 600 MB each.
 - `ingest data/parallel` takes about 5 minutes and downloads two more translation models.
 - `evaluate_multilingual.py` takes 6 to 9 minutes and rewrites `eval_results.md`.
