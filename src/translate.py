@@ -27,6 +27,10 @@ usage = {"seconds": 0.0, "characters": 0}  # what translation has cost in this p
 def detect_language(text, min_letters=20, min_probability=0.7):
     """ISO 639-1 code, or None when the text is too short or the detector is unsure."""
     text = (text or "").strip()[:2000]
+    if text.isupper():
+        # The detector reads capitals as another language: typed as a query, 41 of the 640 English titles
+        # came out German, Vietnamese or Somali. In lower case, none.
+        text = text.lower()
     letters = sum(ch.isalpha() for ch in text)
     kana = len(re.findall(r"[\u3040-\u30ff]", text))
     hangul = len(re.findall(r"[\uac00-\ud7af]", text))

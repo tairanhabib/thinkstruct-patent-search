@@ -98,7 +98,7 @@ def test_patent_with_no_claims_can_still_be_the_source_of_a_similarity_search(bu
     index, _ = build_index([without(COMPLETE, "claims"), OTHER])
     info = {}
     results = search(doc_number="D-COMPLETE", claim_number=1, index=index, info=info)
-    assert docs(results) == ["D-OTHER"] and info["query_source"] == "abstract"  # fell back, and says so
+    assert docs(results) == ["D-OTHER"] and info["query_source"].startswith("abstract (claim ")  # fell back, and says which claim was missing
 
 
 def test_patent_with_only_a_title_is_kept_and_found_by_keyword(build_index):

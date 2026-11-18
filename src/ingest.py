@@ -102,7 +102,8 @@ def normalize(raw, file_name):
         "filename": _text(row.get("filename")),
         "claims": parse_claims(_items(row.get("claims"))),
         "description": _items(row.get("detailed_description")),
-        "codes": [c for c in (re.sub(r"[^A-Z0-9]", "", str(c).upper()) for c in codes) if c],
+        # strings only: a null inside the list used to be stored as the code "NONE"
+        "codes": [c for c in (re.sub(r"[^A-Z0-9]", "", c.upper()) for c in codes if isinstance(c, str)) if c],
         "raw_classification": _text(row.get("classification")),
     }
     patent["filing_week"] = _filing_week(file_name, patent["filename"])
@@ -116,8 +117,10 @@ def normalize(raw, file_name):
 
 def insert_patent(con, patent, collection):
     sample = (patent["abstract"] or (patent["claims"][0]["text"] if patent["claims"] else None)
-              or " ".join(patent["description"][:3]) or patent["title"])
-    language = translate.detect_language(sample)
+              or " ".join(patent["description"][:3]))
+    # A title alone is weak evidence, so it must pass the stricter test used for typed queries: with the
+    # usual one, 15 of the 640 English titles came out French, Romanian, Danish or Estonian. Stricter, none.
+    language = translate.detect_language(sample) if sample else translate.detect_language(patent["title"], 40, 0.9)
     title_en, abstract_en, untranslated = patent["title"], patent["abstract"], False
     if language and language != "en":
         if translate.available(language):
@@ -183,6 +186,7 @@ def ingest_dir(data_dir, index_dir=None, collection=None):
                 stats[f"missing_{name}"] += 1
             if not (patent["title"] or patent["abstract"] or patent["claims"] or patent["description"]):
                 stats["no_searchable_text"] += 1
+                print(f"no searchable text in {patent['doc_number']} ({path}): kept and shown, cannot match a query")
         con.commit()
     if translate.usage["characters"] > before["characters"]:
         stats["translated_characters"] = translate.usage["characters"] - before["characters"]

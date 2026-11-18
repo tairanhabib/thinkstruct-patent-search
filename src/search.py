@@ -235,7 +235,10 @@ def source_text(index, doc_number, claim_number=None):
             if len(text) >= embed.limits(language)[0]:  # the same rule that decides what gets embedded
                 if kind == "claim" and inferred and title:
                     text = f"{title}: {text}"  # as at ingest: a claim without its preamble needs a subject
-                return text, language or "en", "abstract" if kind == "abstract" else f"{kind} {number_found}"
+                label = "abstract" if kind == "abstract" else f"{kind} {number_found}"
+                if claim_number and not number:  # fell back: say so, do not just answer with something else
+                    label += f" (claim {claim_number} not found or too short)"
+                return text, language or "en", label
     raise ValueError(f"patent {doc_number} has no text long enough to search with")
 
 
@@ -281,6 +284,8 @@ def search(query=None, doc_number=None, claim_number=None, top_k=10, cpc_prefix=
         raise ValueError(f"mode must be one of {MODES}")
     if cross_lingual not in CROSS_LINGUAL:
         raise ValueError(f"cross_lingual must be one of {CROSS_LINGUAL}")
+    if top_k < 1:
+        raise ValueError("top must be at least 1")  # -1 used to return everything but the last result
     if query and not any(ch.isalnum() for ch in query):
         raise ValueError("the query has no letters or digits")  # it used to return a ranked list for "?!" or "   "
     if passage_types and (mode == "keyword" or not (query or doc_number)):
