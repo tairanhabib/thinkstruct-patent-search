@@ -330,13 +330,17 @@ def test_the_tables_survive_the_injection_attempts(index):
 
 
 def test_negative_top_is_rejected_or_empty(index):
-    results = search("wheel", top_k=-1, translate_results=False, index=index)
-    assert len(results) == 0, f"top_k=-1 returned {len(results)} results"
+    # Changed by the builder with the m2 fix: the search now refuses (the "rejected" half of this test's name),
+    # which the fast version of this test in tests/ already accepted. The body only allowed an empty list.
+    with pytest.raises(ValueError, match="top must be at least 1"):
+        search("wheel", top_k=-1, translate_results=False, index=index)
 
 
 def test_punctuation_only_keyword_filter_is_not_silently_dropped(index, patents):
-    results = search("wheel", keywords="!!! ???", top_k=EVERYTHING, translate_results=False, index=index)
-    assert len(results) < len(patents), "a keyword filter with no usable word was ignored and the search ran unfiltered"
+    # Changed by the builder with the m3 fix: a filter with no usable word is now refused with a message, which the
+    # fast version of this test in tests/ already accepted. The body only allowed a shorter result list.
+    with pytest.raises(ValueError, match="keyword filter has no letters or digits"):
+        search("wheel", keywords="!!! ???", top_k=EVERYTHING, translate_results=False, index=index)
 
 
 def test_search_before_any_ingest_gives_a_message_not_a_crash(tmp_path):

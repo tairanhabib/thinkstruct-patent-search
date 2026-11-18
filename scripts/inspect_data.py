@@ -14,6 +14,8 @@ from langdetect import DetectorFactory, detect
 
 DetectorFactory.seed = 0  # langdetect is random without a seed
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 def is_missing(value):
     if value is None:
@@ -89,6 +91,30 @@ def main(data_dir):
         print("   ", repr(p["claims"][0][:110]))
     print("  second claim example:", repr(patents[0]["claims"][1][:110]))
     print("  cancelled example:", repr(next(c for c in claims if re.search(r"\(cancel+ed\)", c, re.I))[:80]))
+
+    # Is "previous number plus one" the right number for a claim that lost its number? Wherever unnumbered
+    # items sit between two numbered claims, their count can be compared with the gap in the numbering.
+    from src.ingest import CANCELLED, CLAIM_NUMBER
+    runs = matching = 0
+    for p in patents:
+        previous, run = 0, 0
+        for item in (c for c in (p.get("claims") or []) if isinstance(c, str) and c.strip()):
+            number = CLAIM_NUMBER.match(item)
+            if CANCELLED.fullmatch(item):  # "1 - 5 . (canceled)" uses up its numbers
+                stated = re.findall(r"\d+", item)
+                first, last = (int(stated[0]), int(stated[-1])) if stated else (previous + run + 1,) * 2
+            elif number:
+                first = int(number.group(1))
+                last = int(number.group(2) or number.group(1))
+            else:
+                run += 1
+                continue
+            if run:
+                runs += 1
+                matching += first - previous - 1 == run
+            previous, run = last, 0
+    print(f"  runs of unnumbered claims followed by a numbered claim: {runs}; "
+          f"as many items as the gap in the numbering: {matching} ({matching / runs:.1%})")
 
     # description paragraphs
     paras = [d for p in patents for d in (p.get("detailed_description") or [])]

@@ -1,0 +1,245 @@
+{
+ "missing_judgments": 0,
+ "by_category_english": {
+  "general": {
+   "queries": 10,
+   "mean_score_at_5": 0.84,
+   "share_with_a_2": 0.6
+  },
+  "vague": {
+   "queries": 5,
+   "mean_score_at_5": 0.92,
+   "share_with_a_2": 0.6
+  },
+  "specific": {
+   "queries": 5,
+   "mean_score_at_5": 1.28,
+   "share_with_a_2": 0.8
+  },
+  "misspelled": {
+   "queries": 5,
+   "mean_score_at_5": 0.68,
+   "share_with_a_2": 0.2
+  },
+  "no_match": {
+   "queries": 5,
+   "mean_score_at_5": 0.0,
+   "share_with_a_2": 0.0
+  },
+  "all 30": {
+   "queries": 30,
+   "mean_score_at_5": 0.76,
+   "share_with_a_2": 0.467
+  },
+  "25 that should match something": {
+   "queries": 25,
+   "mean_score_at_5": 0.912,
+   "share_with_a_2": 0.56
+  }
+ },
+ "by_language_general": {
+  "en": {
+   "queries": 10,
+   "mean_score_at_5": 0.84,
+   "share_with_a_2": 0.6,
+   "detected_as": [
+    "en"
+   ],
+   "detected_correctly": 10
+  },
+  "de": {
+   "queries": 10,
+   "mean_score_at_5": 0.78,
+   "share_with_a_2": 0.4,
+   "detected_as": [
+    "de"
+   ],
+   "detected_correctly": 10
+  },
+  "es": {
+   "queries": 10,
+   "mean_score_at_5": 0.74,
+   "share_with_a_2": 0.5,
+   "detected_as": [
+    "es"
+   ],
+   "detected_correctly": 10
+  },
+  "zh": {
+   "queries": 10,
+   "mean_score_at_5": 0.46,
+   "share_with_a_2": 0.2,
+   "detected_as": [
+    "zh"
+   ],
+   "detected_correctly": 10
+  },
+  "ja": {
+   "queries": 10,
+   "mean_score_at_5": 0.3,
+   "share_with_a_2": 0.0,
+   "detected_as": [
+    "ja"
+   ],
+   "detected_correctly": 10
+  }
+ },
+ "overlap_with_english_top10": {
+  "de": {
+   "mean_shared_inventions_of_10": 4.5,
+   "mean_shared_documents_of_10": 4.9,
+   "same_top_1": 5
+  },
+  "es": {
+   "mean_shared_inventions_of_10": 5.2,
+   "mean_shared_documents_of_10": 5.3,
+   "same_top_1": 6
+  },
+  "zh": {
+   "mean_shared_inventions_of_10": 3.8,
+   "mean_shared_documents_of_10": 3.9,
+   "same_top_1": 4
+  },
+  "ja": {
+   "mean_shared_inventions_of_10": 2.0,
+   "mean_shared_documents_of_10": 2.0,
+   "same_top_1": 2
+  }
+ },
+ "no_match": [
+  {
+   "query": "turbofan aircraft engine with a geared fan and a variable bypass ratio",
+   "top_similarity": 0.833,
+   "results_returned": 10,
+   "top_score": 0.0288,
+   "judged_top5": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "query": "sourdough bread recipe with a long cold fermentation",
+   "top_similarity": 0.858,
+   "results_returned": 10,
+   "top_score": 0.0275,
+   "judged_top5": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "query": "smartphone camera lens with optical image stabilisation",
+   "top_similarity": 0.817,
+   "results_returned": 10,
+   "top_score": 0.0311,
+   "judged_top5": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "query": "method for treating migraine with a monoclonal antibody",
+   "top_similarity": 0.847,
+   "results_returned": 10,
+   "top_score": 0.0313,
+   "judged_top5": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "query": "blockchain consensus protocol for cross-border payments",
+   "top_similarity": 0.81,
+   "results_returned": 10,
+   "top_score": 0.0286,
+   "judged_top5": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  }
+ ],
+ "similarity_top1_by_category": {
+  "general": [
+   0.862,
+   0.863,
+   0.852,
+   0.86,
+   0.855,
+   0.924,
+   0.887,
+   0.888,
+   0.881,
+   0.863
+  ],
+  "vague": [
+   0.873,
+   0.879,
+   0.869,
+   0.839,
+   0.865
+  ],
+  "specific": [
+   0.91,
+   0.882,
+   0.92,
+   0.892,
+   0.855
+  ],
+  "misspelled": [
+   0.868,
+   0.862,
+   0.842,
+   0.857,
+   0.845
+  ],
+  "no_match": [
+   0.833,
+   0.858,
+   0.817,
+   0.847,
+   0.81
+  ]
+ },
+ "result_languages_by_query_language": {
+  "en": {
+   "de": 38,
+   "en": 231,
+   "zh": 31
+  },
+  "de": {
+   "de": 15,
+   "en": 76,
+   "zh": 9
+  },
+  "es": {
+   "en": 71,
+   "zh": 17,
+   "de": 12
+  },
+  "zh": {
+   "en": 77,
+   "de": 15,
+   "zh": 8
+  },
+  "ja": {
+   "de": 21,
+   "zh": 7,
+   "en": 72
+  }
+ }
+}
