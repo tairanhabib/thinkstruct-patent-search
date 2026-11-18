@@ -685,7 +685,7 @@ On battery in Low Power Mode.
 | Embedding 32,772 vectors | 129.4 s. Whole `ingest data/small` 2 min 16 s |
 | Benchmark | 2 min 54 s. Semantic 15.9 ms, hybrid 17.0 ms, keyword 1.2 ms |
 | 1% filter, first against after | 0.40 against 1.64 ms (4.1 times). At 983,160 vectors 3.9 against 65.9 ms (17 times) |
-| Tests | 93 passed in 1.2 s |
+| Tests | 93 passed in 1.2 s (525 since the independent test pass, see the last section) |
 | Building the German and Chinese set, with retries | 403 s and 552 s (6,902 and 5,034 characters per second), 15 min 56 s in all |
 | `ingest data/parallel` | 5 min 31 s: 100,183 characters translated in 223.1 s (449 per second), 11,827 vectors in 44.5 s |
 | Evaluation | 5 min 40 s |
