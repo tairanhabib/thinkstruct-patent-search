@@ -4,7 +4,7 @@ Take-home for Thinkstruct. Part 1 is a hybrid search engine over patent passages
 patents with a small proof of concept. Part 3 is the machine translation enhancement: ingest, search and display
 patents that are not in English.
 
-**Video (2 minutes, Parts 2 and 3):** link to be added.
+**Video (2 minutes, Parts 2 and 3):** https://youtu.be/-1_mIv9T8RQ
 
 Everything measured here was measured on an Apple M2 Pro laptop (10 cores, 16 GB). The full log of decisions, numbers
 and known weaknesses is in [NOTES.md](NOTES.md). The eight decisions that matter most are in [DECISIONS.md](DECISIONS.md).
@@ -104,9 +104,9 @@ python cli.py show --doc 20240083200-ZH
 - Optional: `python scripts/compare_models.py` repeats a small version of the test with two larger embedding models.
   It downloads 5.7 GB.
 
-**The real non-English sample.** The task says to request it. It had not arrived when this was built, so Part 3 runs
-on the machine translated set above, and section 7 says what that does and does not prove. When the real files arrive,
-put them in `data/foreign/` and run `python cli.py ingest data/foreign`. The ingest accepts the field names from the task
+**The real non-English sample.** The task says to request it. I forgot to ask for it, so Part 3 runs on the machine
+translated set above, and section 7 says what that does and does not prove. If you have the real files, put them in
+`data/foreign/` and run `python cli.py ingest data/foreign`. The ingest accepts the field names from the task
 sheet as well as the ones in the provided files, detects the language, and needs no code change as far as I can tell
 without having seen the files.
 

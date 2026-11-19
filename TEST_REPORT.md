@@ -414,7 +414,7 @@ disk), and the half-precision index size, which has never been run. Full list: `
 | Part 2 design: components, pipelines, cost, errors, tracking, challenges | Yes, all present in `docs/scale_design.md` |
 | Part 2 proof of concept | Yes, runs without Docker |
 | Video | **No.** Placeholder |
-| Non-English sample requested | The README says it was requested and had not arrived |
+| Non-English sample requested | **No.** The README said it had not arrived. Corrected on 18 November 2026: it was never requested |
 
 **`DECISIONS.md` against the code.** All eight decisions are implemented as written: passages as the unit; query
 translated per language with scores calibrated on a 2,000 passage sample; only title, abstract, query and displayed text

@@ -7,7 +7,7 @@ flowchart TD
     subgraph IN["Input data (JSON files, never committed)"]
         small["data/small<br/>640 English patents"]
         parallel["data/parallel<br/>100 patents in German and Chinese<br/>(machine translated copies)"]
-        foreign["data/foreign<br/>real non-English sample<br/>(not received yet)"]
+        foreign["data/foreign<br/>real non-English sample<br/>(not requested)"]
     end
 
     mk["scripts/make_parallel_set.py<br/>opus-mt English to German, Chinese"]

@@ -66,7 +66,7 @@ Measured on the small dataset (64 files in `data/small/`):
 
 3. **The classification table stays, but for a different reason.** The data has exactly one
    code per patent, so a separate table is not needed for this dataset. I keep the
-   `classifications` table anyway because the foreign sample has not arrived and may
+   `classifications` table anyway because I have not seen the foreign sample, and it may
    carry several codes per patent. Cost: one extra join in the filter.
 
 ### Other things confirmed
@@ -344,9 +344,9 @@ python scripts/evaluate_multilingual.py      # writes eval_results.md
 python scripts/compare_models.py             # is the gap a property of the small model?
 ```
 
-The real non-English sample has not arrived. Everything below is measured on a **synthetic** set: 100 English patents
-machine translated into German and Chinese. `data/foreign/` is the place for the real sample; it goes through the same
-`python cli.py ingest data/foreign` with no code change, as far as I can tell without seeing its format.
+I forgot to ask for the real non-English sample. Everything below is measured on a **synthetic** set: 100 English
+patents machine translated into German and Chinese. `data/foreign/` is the place for the real sample; it goes through
+the same `python cli.py ingest data/foreign` with no code change, as far as I can tell without seeing its format.
 
 ### The main finding: the plan's core assumption was wrong
 
